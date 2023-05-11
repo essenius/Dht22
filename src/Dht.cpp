@@ -19,7 +19,6 @@ Dht::Dht(uint8_t pin, SensorData* sensorData) : _pin(pin), _sensorData(sensorDat
 
 void Dht::begin() {
     _lastReadTime = gpioTick() - MIN_INTERVAL_MICROS;
-    _sensorData->setIdle();
 }
 
 float Dht::readHumidity() {
@@ -48,7 +47,7 @@ bool Dht::read() {
     uint32_t currenttime = gpioTick();
 
     if (currenttime - _lastReadTime < MIN_INTERVAL_MICROS) {
-      printf("Too early: c=%u l=%u, diff=%u\n", currenttime, _lastReadTime, currenttime - _lastReadTime);
+      printf("Using cache: c=%u l=%u, diff=%u\n", currenttime, _lastReadTime, currenttime - _lastReadTime);
       return _conversionOk; 
     }
     printf("Reading..\n");
@@ -83,7 +82,7 @@ bool Dht::read() {
     uint32_t waitTime = gpioTick();
     // wait for the callback to complete reading.
     gpioDelay(MINUMIM_READ_TIME_MICROS);
-    while (!_sensorData->readEnded()) {
+    while (_sensorData->isReading()) {
         gpioDelay(WAIT_INTERVAL_MICROS);
     } 
     waitTime = gpioTick() - waitTime;

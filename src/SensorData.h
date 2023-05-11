@@ -4,42 +4,37 @@
 #include <cstdint>
 #include <stdio.h>
 #include <array>
-#include <pigpio.h>
 
 constexpr int EDGES = 84;
 constexpr int BYTES = 5;
 constexpr int START_EDGE = 4;
 
 enum class SensorState {
-    Idle,
     Reading,
     Timeout,
-    Transmitted,
-    Error,
+    ReadError,
     Done
 };
 
 class SensorData {
 public:
-    void setIdle();
-    void initRead(uint32_t timestamp);
     void addEdge(int level, uint32_t timestamp);
-    bool readEnded();
-    bool isDone();
-    void print();
-    float getTemperature();
+    bool isDone() const;
+    bool isReading() const;
     float getHumidity();
+    SensorState getState() const;
+    float getTemperature();
+    uint16_t getWordAtIndex(const uint8_t index);
+    void initRead(uint32_t timestamp);
+    void print();
 
 private:
-    uint32_t _previousTime;
-    std::array<uint32_t, EDGES> _duration;
-    std::array<int, EDGES> _level;
     int _currentIndex = 0;
-    SensorState _state = SensorState::Idle;
     std::array<uint8_t, BYTES> _data;
-
-    void convertToBytes();
-
+    int _overrunCount = 0;
+    uint32_t _previousTime;
+    uint32_t _referenceDuration;
+    SensorState _state = SensorState::Timeout; // any state not Done or Reading
 };
 
 #endif

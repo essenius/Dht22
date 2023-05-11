@@ -35,7 +35,8 @@
 *.profraw
 
 # Mac stuff
-._DS_Store
+.*DS_Store
 
 # build folder
-build/
+build*/
+
