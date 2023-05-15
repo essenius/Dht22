@@ -40,3 +40,5 @@
 # build folder
 build*/
 
+# config file
+config.txt
