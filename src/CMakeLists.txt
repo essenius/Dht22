@@ -12,8 +12,8 @@ message(STATUS "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}")
 
 add_library(${dhtName} "")
 
-set(myHeaders Config.h Dht.h Mqtt.h SensorData.h)
-set(mySources Config.cpp Dht.cpp Mqtt.cpp SensorData.cpp)
+set(myHeaders ClimateMeasurement.h Config.h Dht.h ISender.h Mqtt.h SensorData.h)
+set(mySources ClimateMeasurement.cpp Config.cpp Dht.cpp Mqtt.cpp SensorData.cpp)
 target_sources (${dhtName} PUBLIC ${myHeaders} PRIVATE ${mySources})
 target_include_directories(${dhtName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${dhtName} pigpio mosquittopp)

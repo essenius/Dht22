@@ -12,19 +12,21 @@
 
 using namespace std;
 
+constexpr const char* STATE = "state";
+
 Mqtt::Mqtt(const Config* config) : mosquittopp(config->getEntry("id")) {
     _config = config;
 };
 
 int Mqtt::begin() {
-    printf("Begin, id=%s\n", _config->getEntry("id"));
+    mosqpp::lib_init();
     _caCert = _config->getEntry("caCert");
     _broker = _config->getEntry("broker", "localhost");
-    _port = std::stoi(_config->getEntry("port", "1883"));
+    _config->setIfExists("port", &_port);
     _user = _config->getEntry("user");
     _password = _config->getEntry("password");
+    _config->setIfExists("keepAliveSeconds", &_keepAliveSeconds);
     _topicTemplate = _config->getEntry("topicTemplate");
-    _keepAliveSeconds = std::stoi(_config->getEntry("keepAliveSeconds", "60"));
     if (_topicTemplate == nullptr) {
         std::cerr << "Failed to find topicTemplate in config file\n";
         return false;
@@ -34,6 +36,10 @@ int Mqtt::begin() {
 
 bool Mqtt::connect1() {
     if (_isConnected) return true;
+    char willTopic[256];
+    snprintf(willTopic, sizeof(willTopic), _topicTemplate, STATE);
+    constexpr const char* LOST = "lost";
+    will_set(willTopic, strlen(LOST), LOST);
     if (_caCert != nullptr) {
         printf("setting ca cert %s\n", _caCert);
         if (tls_set(_caCert) != MOSQ_ERR_SUCCESS) {
@@ -48,45 +54,62 @@ bool Mqtt::connect1() {
             return false;
         }
     }
+
+
+
     printf("Connecting to %s:%d, with keepalive %d\n", _broker, _port, _keepAliveSeconds);
-    if (connect(_broker, _port, _keepAliveSeconds) == MOSQ_ERR_ERRNO) {
-        std::cerr << "Failed\n";
+    if (auto rc = connect(_broker, _port, _keepAliveSeconds) == MOSQ_ERR_ERRNO) {
+        std::cerr << "Failed, error: " << strerror(rc) << "\n";
         return false;
     }
 
+    printf("starting loop\n");
     loop_start();
+    
+    std::cout << "Started loop\n";
+
     return true;
 }
 
+void Mqtt::shutdown() {
+    if (_isConnected) {
+        sendString(STATE, "disconnected");
+        disconnect();
+    }
+    loop_stop();
+}
+
 Mqtt::~Mqtt() {
-  loop_stop();
   cout << "##-Destructor-##" << endl; 
 }
 
-void Mqtt::on_connect(int rc) {
-    _isConnected = (rc == 0);
-    if (rc == 0) {
-        cout << " ##-Connected with Broker-## " << rc << std::endl;
-    }
-    else {
-        cout << "##-Unable to Connect Broker-## " << rc << std::endl;
-    }
+bool Mqtt::sendString(const char* item, const char* message) {
+    char topic[256];
+    snprintf(topic, sizeof(topic), _topicTemplate, item);
+    printf("Sending %s to %s\n", message, topic);
+    int returnValue = publish(nullptr, topic, strlen(message), message, 0, false);
+    return (returnValue == MOSQ_ERR_SUCCESS);
 }
 
 bool Mqtt::sendFloat(const char* item, float value) {
     constexpr const char* ERROR_ITEM = "error";
-    char topic[256];
-    char message[256];
     if(isnan(value)) {
-        snprintf(topic, sizeof(topic), _topicTemplate, ERROR_ITEM);
-        strcpy(message, item);
-    } else {
-        snprintf(topic, sizeof(topic), _topicTemplate, item);
-        snprintf(message, sizeof(message), "%.1f", value);
+        return sendString(ERROR_ITEM, item);
+    } 
+    char message[20];
+    snprintf(message, sizeof(message), "%.1f", value);
+    return sendString(item, message);
+}
+
+void Mqtt::on_connect(int rc) {
+    _isConnected = (rc == MOSQ_ERR_SUCCESS);
+    if (_isConnected) {
+        cout << "## Connected" << std::endl;
+        sendString(STATE, "ready");
     }
-    printf("Sending %s to %s\n", message, topic);
-    int returnValue = publish(nullptr, topic, strlen(message), message, 0, false);
-    return (returnValue == MOSQ_ERR_SUCCESS);
+    else {
+        cout << "## Failed connecting - code " << rc << std::endl;
+    }
 }
 
 void Mqtt::on_disconnect(int rc) {
@@ -98,4 +121,6 @@ void Mqtt::on_publish(int mid) {
     cout << "## - Message published successfully: " << mid << endl;
 }
 
-
+void Mqtt::on_log(int level, const char* str) {
+    cout << "## - Log: " << level << "-" << str << endl;
+}

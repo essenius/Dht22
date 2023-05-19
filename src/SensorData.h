@@ -26,7 +26,6 @@ public:
     float getTemperature();
     uint16_t getWordAtIndex(const uint8_t index);
     void initRead(uint32_t timestamp);
-    void print();
 
 private:
     int _currentIndex = 0;

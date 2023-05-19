@@ -88,8 +88,3 @@ bool SensorData::isDone() const {
 bool SensorData::isReading() const {
     return _state == SensorState::Reading;
 }
-
-void SensorData::print() {
-    printf("metadata: state=%d, currentIndex=%d, previousTime=%u overruns: %d\n", _state, _currentIndex, _previousTime, _overrunCount);
-    printf("data: %2x %2x %2x %2x %2x\n", _data[0], _data[1], _data[2], _data[3], _data[4]);
-}

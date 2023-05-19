@@ -19,28 +19,34 @@ bool Config::begin(const char* fileName) {
         }
     }
     input_file.close();
+    return setId();
+}
 
-    int size = gethostname(_hostName, _SC_HOST_NAME_MAX);
-    printf("hostname=%s\n", _hostName);
+bool Config::setId() {
     auto idTemplate = getEntry("idTemplate", nullptr);
     if (idTemplate == nullptr) {
-        _config["id"] = _hostName;
-    } else {
-        auto id = std::string(idTemplate);
-        auto locationOfString = id.find("%s");
-        if (locationOfString != std::string::npos) {
-            _hostName[size] = '\0';
+        return true;
+    }
+
+    auto id = std::string(idTemplate);
+    auto locationOfString = id.find("%s");
+    if (locationOfString != std::string::npos) {
+        if (gethostname(_hostName, _SC_HOST_NAME_MAX) == 0) {
             id.replace(locationOfString, 2, _hostName);
-        };
+        } else {
+            std::cerr << "Failed to get hostname\n";
+            return false;
+        }
         _config["id"] = id;
     }
     return true;
 }
 
 const char* Config::getEntry(const char* key, const char* defaultValue) const {
-    auto value = _config.find(key);
-    if (value == _config.end()) {
+    auto iterator = _config.find(key);
+    if (iterator == _config.end()) {
         return defaultValue;
     }
-    return value->second.c_str();
+    return iterator->second.c_str();
 }
+

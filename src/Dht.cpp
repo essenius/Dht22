@@ -14,21 +14,19 @@ constexpr int READ_TIMEOUT_MILLIS = 10;
 constexpr uint32_t MINUMIM_READ_TIME_MICROS = 3000;
 // don't check too often, but also not too seldom
 constexpr uint32_t WAIT_INTERVAL_MICROS = 500;
-// when powering down, wait at least 50 ms before powering up again
+// when powering down, wait at least 50 ms before powering up
 constexpr uint32_t SHUTDOWN_TIME_MICROS = 50000;
 constexpr int MAX_CONSECUTIVE_FAILURES = 5;
 
-Dht::Dht(SensorData* sensorData, uint8_t powerPin, uint8_t dataPin) :  _sensorData(sensorData), _powerPin(powerPin), _dataPin(dataPin) {}
-
-Dht::~Dht() {
-    gpioWrite(_powerPin, PI_LOW);
-}
+Dht::Dht(SensorData* sensorData, Config* config) :  _sensorData(sensorData), _config(config) {}
 
 void Dht::begin() {
+    _config->setIfExists("dataPin", &_dataPin);
+    _config->setIfExists("powerPin", &_powerPin);
     gpioSetMode(_powerPin, PI_OUTPUT);
     gpioWrite(_powerPin, PI_HIGH);
     _startupTime = gpioTick();
-    _lastReadTime = gpioTick();
+    _nextScheduledRead = _startupTime + MIN_INTERVAL_MICROS;
     _consecutiveFailures = 0;
 }
 
@@ -59,10 +57,25 @@ void Dht::reportResult(const bool success) {
     }
 }
 
+void Dht::shutdown() {
+    gpioWrite(_powerPin, PI_LOW);
+    gpioTerminate();
+}
+
 void Dht::reset() {
     gpioWrite(_powerPin, PI_LOW);
     gpioDelay(SHUTDOWN_TIME_MICROS);
     begin();
+}
+
+void Dht::waitForNextMeasurement() {
+    uint32_t currentTime = gpioTick();
+    if (currentTime < _nextScheduledRead) {
+        gpioDelay(_nextScheduledRead - currentTime);
+    } else if (currentTime - _nextScheduledRead > 10000) {
+        // if we're off more than 10 milliseconds, recalibrate. This could happen after connection issues
+        _nextScheduledRead = currentTime;
+    }
 }
 
 void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
@@ -70,24 +83,19 @@ void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
     data->addEdge(level, tick);
 }
 
+/// @brief Read the sensor and store the result in the class variables. Expects the sensor to be powered up (does not wait).
+/// @return whether a valid result is available. A cached result of less than two seconds old is considered valid.
 bool Dht::read() {
 
-    uint32_t currenttime = gpioTick();
-    // if we just started, wait for the sensor to start up
-    auto timeSinceStartup = currenttime - _startupTime;
-    if (timeSinceStartup < MIN_INTERVAL_MICROS) {
-        printf("Waiting for startup: c=%u s=%u, diff=%u\n", currenttime, _startupTime, timeSinceStartup);
-        gpioDelay(MIN_INTERVAL_MICROS - timeSinceStartup);
-    } else {
-        // if we've run longer, check if sensor was read less than two seconds ago. If so, return the last reading.
-        auto timeSinceLastRead = currenttime - _lastReadTime;
-        if (timeSinceLastRead < MIN_INTERVAL_MICROS) {
-            printf("Using cache: c=%u l=%u, diff=%u, result=%d\n", currenttime, _lastReadTime, timeSinceLastRead, _conversionOk);
-            return _conversionOk; 
-        }
+    uint32_t currentTime = gpioTick();
+    if ((currentTime < _nextScheduledRead) && (currentTime - _lastReadTime < MIN_INTERVAL_MICROS)) {
+        printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
+        return _conversionOk; 
     }
+
     printf("Reading..\n");
-    _lastReadTime = currenttime;
+    _lastReadTime = currentTime;
+    _nextScheduledRead += MIN_INTERVAL_MICROS;
 
     // Send start signal.  See DHT datasheet for full signal diagram:
     //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf
@@ -127,7 +135,6 @@ bool Dht::read() {
     gpioSetWatchdog(_dataPin, 0);
     gpioSetAlertFuncEx(_dataPin, nullptr, nullptr);
     printf("Waited %u ns\n", waitTime);
-    _sensorData->print();
 
     _humidity = _sensorData->getHumidity();
     _temperature = _sensorData->getTemperature();
