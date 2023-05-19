@@ -19,7 +19,6 @@ Mqtt::Mqtt(const Config* config) : mosquittopp(config->getEntry("id")) {
 };
 
 int Mqtt::begin() {
-    mosqpp::lib_init();
     _caCert = _config->getEntry("caCert");
     _broker = _config->getEntry("broker", "localhost");
     _config->setIfExists("port", &_port);

@@ -11,6 +11,10 @@ bool Config::begin(const char* fileName) {
     }
     std::string line;
     while (std::getline(input_file, line)) {
+        // ignore comments
+        if (line.rfind("#", 0) == 0) {
+            continue;
+        }
         size_t pos = line.find('=');
         if (pos != std::string::npos) {
             std::string entity = line.substr(0, pos);            

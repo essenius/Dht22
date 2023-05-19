@@ -1,0 +1,16 @@
+# The pin to power the sensor (enabling power cycling)
+powerPin=4
+# The data pin for the sensor
+dataPin=17
+# If caCert is defined, we use TLS
+caCert=/home/pi/ca.crt
+# If idTemplate is defined, we use the id to publish the data. The %s is replaced by the device name
+idTemplate=%s-climate-sensor
+# The MQTT broker and port to connect to
+broker=my-broker
+port=8883
+# If user and password are defined, we use authentication
+user=mqtt_user
+password=mqtt_password
+# The topic to publish the data to. The %s is replaced by the item (humidity, temperature, error, state)
+topicTemplate=sensors/device/%s
