@@ -33,6 +33,7 @@ void SensorData::addEdge(int levelIn, uint32_t timestamp) {
             break;
         // any other value indicates a timeout
         default:
+            printf("Timeout\n");
             _state = SensorState::Timeout;
             return;
     }

@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "Dht.h"
 #include "Mqtt.h"
+#include "Homie.h"
 #include <pigpio.h>
 #include <stdio.h>
 #include <signal.h>
@@ -13,30 +14,32 @@ void signalHandler(sig_atomic_t s){
 }
 
 int main(int argc, char** argv) {
+   //gpioCfgSetInternals(1<<10); // turn off signal handling
    if (gpioInitialise()<0) return -1;
+   printf("Initialized pigpio\n");
    signal(SIGINT,signalHandler);
    SensorData sensorData;
    Config config;
    config.begin("/home/pi/.config/dht.conf");
+   printf("Config began, device=%s\n", config.getEntry("device", "unknown"));
    Dht dht(&sensorData, &config);
+   printf("Dht declared\n");
    Mqtt mqtt(&config);
-   if (!mqtt.begin()) return -1;
+   printf("MQTT defined\n");
+   Homie homie(&mqtt, &config);
+   printf("Declared objects\n");
+   if (!homie.begin()) return -1;
    printf("Revision: %u\n", gpioHardwareRevision());
    dht.begin();
    printf("Waiting to connect\n");
-   while(!mqtt.isConnected()) { 
-      sleep(0.1); 
-   }
+   if (!mqtt.waitForConnection()) return -2;
+   if (!homie.sendMetadata()) return -3;
    printf("Connected\n"); 
-
-   ClimateMeasurement climateMeasurement(&mqtt);
+   ClimateMeasurement climateMeasurement(&homie);
    printf("Starting Main loop\n");
    while (keepGoing) {
-      if (!mqtt.isConnected()) {
-         printf("Connection lost. Reconnecting\n");
-         mqtt.reconnect();
-         while(!mqtt.isConnected()) { sleep(0.1); }
-      }
+      // ensure we don't reset it if break was pressed
+      keepGoing &= mqtt.verifyConnection();
       dht.waitForNextMeasurement();      
       auto temperature = dht.readTemperature();
       auto humidity = dht.readHumidity();
@@ -44,5 +47,5 @@ int main(int argc, char** argv) {
    }
    printf("Shutting down\n");
    dht.shutdown();
-   mqtt.shutdown();
+   homie.shutdown();
 }

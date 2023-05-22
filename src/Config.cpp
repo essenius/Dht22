@@ -2,6 +2,8 @@
 #include <iostream>
 #include "Config.h"
 #include <unistd.h>
+#include <cstring>
+#include <algorithm>
 
 bool Config::begin(const char* fileName) {
     std::ifstream input_file(fileName);
@@ -23,26 +25,19 @@ bool Config::begin(const char* fileName) {
         }
     }
     input_file.close();
-    return setId();
+    return setDevice();
 }
 
-bool Config::setId() {
-    auto idTemplate = getEntry("idTemplate", nullptr);
-    if (idTemplate == nullptr) {
-        return true;
+bool Config::setDevice() {
+    if (auto device = getEntry("device"); device != nullptr) return true;
+    printf("setting device to host name\n");
+    char hostName[_SC_HOST_NAME_MAX];
+    if (gethostname(hostName, _SC_HOST_NAME_MAX) != 0) {
+        std::cerr << "Failed to get device name\n";
+        return false;
     }
-
-    auto id = std::string(idTemplate);
-    auto locationOfString = id.find("%s");
-    if (locationOfString != std::string::npos) {
-        if (gethostname(_hostName, _SC_HOST_NAME_MAX) == 0) {
-            id.replace(locationOfString, 2, _hostName);
-        } else {
-            std::cerr << "Failed to get hostname\n";
-            return false;
-        }
-        _config["id"] = id;
-    }
+    std::transform(hostName, hostName + strlen(hostName), hostName, ::tolower);
+    _config["device"] = hostName;
     return true;
 }
 
@@ -53,4 +48,3 @@ const char* Config::getEntry(const char* key, const char* defaultValue) const {
     }
     return iterator->second.c_str();
 }
-

@@ -3,7 +3,8 @@
 
 class ISender {
 public:
-    virtual bool sendFloat(const char* item, float value) = 0;
+    virtual bool sendHumidity(float value) = 0;
+    virtual bool sendTemperature(float value) = 0;
 };
 
 #endif

@@ -36,7 +36,7 @@ void ClimateMeasurement::processSample(float temperature, float humidity) {
         }
         std::cout << std::endl;
         const float averageTemperature = roundedAverage(_temperature, SAMPLES_PER_MEASUREMENT);
-        _sender->sendFloat("Temperature", averageTemperature);
+        _sender->sendTemperature(averageTemperature);
 
         std::cout << "Humidities: ";
         for (const float humiditySample : _humidity) {
@@ -45,7 +45,7 @@ void ClimateMeasurement::processSample(float temperature, float humidity) {
         std::cout << std::endl;
 
         const float averageHumidity = roundedAverage(_humidity, SAMPLES_PER_MEASUREMENT);
-        _sender->sendFloat("Humidity", averageHumidity);
+        _sender->sendHumidity(averageHumidity);
     	_sampleCount = 0;
     }
 }

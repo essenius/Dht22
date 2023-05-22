@@ -8,15 +8,16 @@
 #include "Config.h"
 #include "ISender.h"
 
-class Mqtt : public mosqpp::mosquittopp, public ISender {
+class Mqtt : public mosqpp::mosquittopp {
 public:
     Mqtt(const Config* config);
     ~Mqtt();
-    int begin();
+    bool begin();
     bool isConnected() { return _isConnected; }
     bool connect1();
-    bool sendFloat(const char* item, float value);
     void shutdown();
+    bool verifyConnection();
+    bool waitForConnection();
 
 private:
     const Config* _config;
@@ -25,7 +26,6 @@ private:
     const char* _user = nullptr;
     const char* _password = nullptr;
     int _port = 1883;
-    const char* _topicTemplate = nullptr;
     int _keepAliveSeconds = 60;
     bool _isConnected = false;
     void on_connect(int rc) override;
@@ -33,7 +33,7 @@ private:
     void on_publish(int mid) override;
     void on_log(int level, const char* str) override;
 
-    bool sendString(const char *item, const char *message);
+//    bool sendString(const char *item, const char *message);
 
 };
 

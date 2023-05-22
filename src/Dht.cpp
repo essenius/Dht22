@@ -70,11 +70,14 @@ void Dht::reset() {
 
 void Dht::waitForNextMeasurement() {
     uint32_t currentTime = gpioTick();
-    if (currentTime < _nextScheduledRead) {
-        gpioDelay(_nextScheduledRead - currentTime);
-    } else if (currentTime - _nextScheduledRead > 10000) {
+    auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick());
+    if (waitTime > 0) {
+        gpioDelay(waitTime);
+        printf("Waited %u us for next measurement\n", waitTime);
+    } else if (waitTime < -10000) {
         // if we're off more than 10 milliseconds, recalibrate. This could happen after connection issues
-        _nextScheduledRead = currentTime;
+        printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, gpioTick());
+        _nextScheduledRead = gpioTick();
     }
 }
 
@@ -134,7 +137,7 @@ bool Dht::read() {
     // stop the watch dog and the callback
     gpioSetWatchdog(_dataPin, 0);
     gpioSetAlertFuncEx(_dataPin, nullptr, nullptr);
-    printf("Waited %u ns\n", waitTime);
+    printf("Waited %u ns for data\n", waitTime);
 
     _humidity = _sensorData->getHumidity();
     _temperature = _sensorData->getTemperature();
