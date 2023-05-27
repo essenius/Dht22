@@ -14,7 +14,7 @@ void SensorData::addEdge(int levelIn, uint32_t timestamp) {
         return;
     }
 
-    int32_t duration = timestamp - _previousTime;
+    uint32_t duration = timestamp - _previousTime;
 
     switch (levelIn) {
         // move from 1 to 0, so we just had a data bit

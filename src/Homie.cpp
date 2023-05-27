@@ -1,9 +1,15 @@
 #include "Homie.h"
 #include <cstring>
+#include <iostream>
 
 Homie::Homie(Mqtt *mqtt, Config* config) {
     _mqtt = mqtt;
     _config = config;
+}
+
+Homie::~Homie() {
+    printf("Homie destructor\n");
+    shutdown();
 }
 
 bool Homie::begin() {
@@ -39,9 +45,7 @@ bool Homie::sendMessage(std::string topic, std::string message, bool retain) {
     if (isConnected != _isConnected) {
         _isConnected = isConnected;
         if (isConnected) sendState("ready");
-    } else {
-        printf("Success sending message%s to %s \n", message.c_str(), topic.c_str());
-    }
+    } 
     return (isConnected);
 }
 
@@ -61,7 +65,9 @@ bool Homie::sendMetadata() {
 }
 
 void Homie::shutdown() {
+    printf("Shutdown Homie\n");
     if (_mqtt->isConnected()) {
+        printf("Disconnecting from MQTT broker\n");
         sendState("disconnected");
     }
     _mqtt->shutdown();

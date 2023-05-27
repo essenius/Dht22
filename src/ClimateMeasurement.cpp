@@ -65,6 +65,8 @@ float ClimateMeasurement::average(float input[], const int sampleSize) {
     for (int i = firstNumberIndex + 1; i < sampleSize; i++) {
         if (std::isnan(input[i])) {
             nanCount++;
+            _overallNanCount++;
+            std::cout << "NaN count: " << _overallNanCount << std::endl;
         }
     }
 

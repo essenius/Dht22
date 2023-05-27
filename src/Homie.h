@@ -8,6 +8,7 @@
 class Homie : public ISender {
 public:
     Homie(Mqtt* mqtt, Config* config);
+    ~Homie();
     bool begin();
     bool sendHumidity(float value) override;
     bool sendMetadata();

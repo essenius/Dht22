@@ -20,14 +20,31 @@ constexpr int MAX_CONSECUTIVE_FAILURES = 5;
 
 Dht::Dht(SensorData* sensorData, Config* config) :  _sensorData(sensorData), _config(config) {}
 
-void Dht::begin() {
+Dht::~Dht() {
+    printf("Dht destructor\n");
+    shutdown();
+}
+
+bool Dht::begin() {
     _config->setIfExists("dataPin", &_dataPin);
     _config->setIfExists("powerPin", &_powerPin);
+    int cfg = gpioCfgGetInternals();
+    cfg |= PI_CFG_NOSIGHANDLER;  
+    gpioCfgSetInternals(cfg);
+    if (gpioInitialise() < 0) {
+        printf("could not init GPIO\n");
+        gpioTerminate();
+        if (gpioInitialise() < 0) return false;
+    }
+
+    printf("Initialized pigpio, revision: %u\n", gpioHardwareRevision());
     gpioSetMode(_powerPin, PI_OUTPUT);
     gpioWrite(_powerPin, PI_HIGH);
     _startupTime = gpioTick();
+    _lastReadTime = _startupTime - MIN_INTERVAL_MICROS;
     _nextScheduledRead = _startupTime + MIN_INTERVAL_MICROS;
     _consecutiveFailures = 0;
+    return true;
 }
 
 float Dht::readHumidity() {
@@ -58,18 +75,21 @@ void Dht::reportResult(const bool success) {
 }
 
 void Dht::shutdown() {
+    printf("Shutting down DHT\n");
     gpioWrite(_powerPin, PI_LOW);
     gpioTerminate();
 }
 
 void Dht::reset() {
-    gpioWrite(_powerPin, PI_LOW);
+    shutdown();
     gpioDelay(SHUTDOWN_TIME_MICROS);
     begin();
 }
 
-void Dht::waitForNextMeasurement() {
+bool Dht::waitForNextMeasurement() {
     uint32_t currentTime = gpioTick();
+    if (currentTime == PI_NOT_INITIALISED) return false;
+    printf("Waiting\n");
     auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick());
     if (waitTime > 0) {
         gpioDelay(waitTime);
@@ -79,6 +99,7 @@ void Dht::waitForNextMeasurement() {
         printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, gpioTick());
         _nextScheduledRead = gpioTick();
     }
+    return true;
 }
 
 void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
@@ -89,16 +110,16 @@ void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
 /// @brief Read the sensor and store the result in the class variables. Expects the sensor to be powered up (does not wait).
 /// @return whether a valid result is available. A cached result of less than two seconds old is considered valid.
 bool Dht::read() {
-
+    printf("Reading\n");
     uint32_t currentTime = gpioTick();
-    if ((currentTime < _nextScheduledRead) && (currentTime - _lastReadTime < MIN_INTERVAL_MICROS)) {
+    if ((static_cast<int32_t>(currentTime - _lastReadTime) < MIN_INTERVAL_MICROS) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
         printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
         return _conversionOk; 
     }
 
-    printf("Reading..\n");
     _lastReadTime = currentTime;
     _nextScheduledRead += MIN_INTERVAL_MICROS;
+    printf("Reading.. (last=%u, next=%u, diff=%d)\n", _lastReadTime, _nextScheduledRead, static_cast<int32_t>(_nextScheduledRead - _lastReadTime));
 
     // Send start signal.  See DHT datasheet for full signal diagram:
     //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf

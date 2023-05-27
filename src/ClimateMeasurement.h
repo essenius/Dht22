@@ -20,7 +20,7 @@ public:
     void begin();
     void processSample(float temperatureIn, float humidityIn);
 
-protected:
+private:
     constexpr static int SAMPLES_PER_MEASUREMENT = 5; // number of samples for aggregation. Must be at least 3 as we discard highest and lowest.
     constexpr static int MAX_CONSECUTIVE_NANS = 2;    // Failing to get values two times or more requires action (reset)
     float _temperature[SAMPLES_PER_MEASUREMENT] = { 0 };
@@ -28,9 +28,10 @@ protected:
     ISender* _sender;
     int _sampleCount = 0;
     int _consecutiveNanCount = 0;
+    int _overallNanCount = 0;
 
-    static float average(float input[], int sampleSize);
-    static float roundedAverage(float input[], int length);
+    float average(float input[], int sampleSize);
+    float roundedAverage(float input[], int length);
 };
 
 #endif

@@ -17,7 +17,7 @@ public:
     bool connect1();
     void shutdown();
     bool verifyConnection();
-    bool waitForConnection();
+    bool waitForConnection(bool& keepGoing);
 
 private:
     const Config* _config;

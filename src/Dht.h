@@ -8,12 +8,13 @@
 class Dht {
 public:
     Dht(SensorData* sensorData, Config* config);
-    void begin();
+    ~Dht();
+    bool begin();
     float readHumidity();
     float readTemperature();
     void reset();
     void shutdown();
-    void waitForNextMeasurement();
+    bool waitForNextMeasurement();
 
 private:
     uint8_t _powerPin = 4;

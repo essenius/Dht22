@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cstring>
 #include <stdexcept>
 #include <cmath>
@@ -66,38 +65,15 @@ bool Mqtt::connect1() {
 }
 
 void Mqtt::shutdown() {
+    cout << "##-Mqtt Shutdown-##" << endl; 
     disconnect();
     loop_stop();
 }
 
 Mqtt::~Mqtt() {
-  cout << "##-Destructor-##" << endl; 
+    shutdown();
+    cout << "##-Mqtt Destructor-##" << endl; 
 }
-
-/*
-bool Mqtt::sendMessage(std::string topic, const char* message) {
-    int returnValue = publish(nullptr, topic.c_str(), strlen(message), message, 0, false);
-    return (returnValue == MOSQ_ERR_SUCCESS);
-}
-
-
-bool Mqtt::sendString(const char* item, const char* message) {
-    char topic[256];
-    snprintf(topic, sizeof(topic), _topicTemplate, item);
-    printf("Sending %s to %s\n", message, topic);
-    return sendMessage(topic, message);
-}
-
-bool Mqtt::sendFloat(const char* item, float value) {
-    constexpr const char* ERROR_ITEM = "error";
-    if(isnan(value)) {
-        return sendString(ERROR_ITEM, item);
-    } 
-    char message[20];
-    snprintf(message, sizeof(message), "%.1f", value);
-    return sendString(item, message);
-}
-*/
 
 void Mqtt::on_connect(int rc) {
     _isConnected = (rc == MOSQ_ERR_SUCCESS);
@@ -126,15 +102,16 @@ bool Mqtt::verifyConnection() {
     if (_isConnected) return true;
     printf("Connection lost. Reconnecting\n");
     reconnect();
-    return waitForConnection();
+    bool keepGoing = true;
+    return waitForConnection(keepGoing);
 }
 
-bool Mqtt::waitForConnection() {
+bool Mqtt::waitForConnection(bool& keepGoing) {
     // we don't wait more than 5 seconds
     constexpr int MAX_WAIT_DECISECONDS = 50;
     int repeatCount = 0;
-    while(!_isConnected && repeatCount++ < MAX_WAIT_DECISECONDS) { 
+    while(keepGoing && !_isConnected && repeatCount++ < MAX_WAIT_DECISECONDS) { 
       usleep(100000); 
    }
-   return repeatCount < MAX_WAIT_DECISECONDS;
+   return keepGoing && repeatCount < MAX_WAIT_DECISECONDS;
 }
