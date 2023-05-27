@@ -7,20 +7,20 @@
 /// At the end, sets state to SensorState::Done if the checksum is correct, otherwise SensorState::Error
 /// @param levelIn the new level (0 or 1 for bit values, 2 for timeout)
 /// @param timestamp the timestamp where the edge was detected
-void SensorData::addEdge(int levelIn, uint32_t timestamp) {
+void SensorData::addEdge(const int levelIn, const uint32_t timestamp) {
 
     if (!isReading()) {
         _overrunCount++;
         return;
     }
 
-    uint32_t duration = timestamp - _previousTime;
+    const uint32_t duration = timestamp - _previousTime;
 
     switch (levelIn) {
         // move from 1 to 0, so we just had a data bit
         case 0:
-            { 
-                auto dataIndex = (_currentIndex - START_EDGE) / 16;
+            {
+	            const auto dataIndex = (_currentIndex - START_EDGE) / 16;
                 _data[dataIndex] <<= 1;
                 if (duration > _referenceDuration) {
                     _data[dataIndex] |= 1;
@@ -42,12 +42,12 @@ void SensorData::addEdge(int levelIn, uint32_t timestamp) {
     _currentIndex++;
 
     if(_currentIndex >= EDGES) {
-        auto checksum = (_data[0] + _data[1] + _data[2] + _data[3]) & 0xFF;
+	    const auto checksum = (_data[0] + _data[1] + _data[2] + _data[3]) & 0xFF;
         _state = checksum == _data[4] ? SensorState::Done : SensorState::ReadError;
     }
 }
 
-float SensorData::getHumidity() {
+float SensorData::getHumidity() const {
     if (!isDone()) {
         return NAN;
     }
@@ -58,22 +58,21 @@ SensorState SensorData::getState() const {
     return _state;
 }
 
-float SensorData::getTemperature() {
+float SensorData::getTemperature() const {
     if (!isDone()) {
         return NAN;
     }
-    auto word = getWordAtIndex(2);
-    bool isNegative = word & 0x8000;
+    const auto word = getWordAtIndex(2);
+    const bool isNegative = word & 0x8000;
     return static_cast<float>(word & 0x7FFF) * 0.1f * (isNegative ? -1 : 1);
 }
 
-uint16_t SensorData::getWordAtIndex(const uint8_t index) {
-    auto result = _data[index] * 256u + _data[index + 1];
+uint16_t SensorData::getWordAtIndex(const uint8_t index) const {
+	const auto result = _data[index] * 256u + _data[index + 1];
     return static_cast<uint16_t>(result);
 }
 
-void SensorData::initRead(uint32_t timestamp)
-{
+void SensorData::initRead(const uint32_t timestamp) {
     _previousTime = timestamp;
     _currentIndex = 0;
     _state = SensorState::Reading;

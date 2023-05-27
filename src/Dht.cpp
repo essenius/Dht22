@@ -1,5 +1,5 @@
 #include <pigpio.h>
-#include <stdio.h> 
+#include <cstdio> 
 #include <cstring>
 #include <cmath>
 #include "Dht.h"
@@ -11,7 +11,7 @@ constexpr uint32_t MIN_INTERVAL_MICROS =  2 * 1000 * 1000;
 // Measurement transmission should take no more than 7.5 ms. Give 2.5 ms extra.  
 constexpr int READ_TIMEOUT_MILLIS = 10;
 // we're waiting at least 79 * 40 us, i.e. about 3000 us. Usually it's 5-6 ms
-constexpr uint32_t MINUMIM_READ_TIME_MICROS = 3000;
+constexpr uint32_t MINIMUM_READ_TIME_MICROS = 3000;
 // don't check too often, but also not too seldom
 constexpr uint32_t WAIT_INTERVAL_MICROS = 500;
 // when powering down, wait at least 50 ms before powering up
@@ -90,8 +90,7 @@ bool Dht::waitForNextMeasurement() {
     uint32_t currentTime = gpioTick();
     if (currentTime == PI_NOT_INITIALISED) return false;
     printf("Waiting\n");
-    auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick());
-    if (waitTime > 0) {
+    if (auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()); waitTime > 0) {
         gpioDelay(waitTime);
         printf("Waited %u us for next measurement\n", waitTime);
     } else if (waitTime < -10000) {
@@ -102,8 +101,8 @@ bool Dht::waitForNextMeasurement() {
     return true;
 }
 
-void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
-    SensorData *data = (SensorData *)userdata;
+void pinCallback(int gpio, int level, uint32_t tick, void *userData) {
+	auto*data = static_cast<SensorData*>(userData);
     data->addEdge(level, tick);
 }
 
@@ -111,7 +110,7 @@ void pinCallback(int gpio, int level, uint32_t tick, void *userdata) {
 /// @return whether a valid result is available. A cached result of less than two seconds old is considered valid.
 bool Dht::read() {
     printf("Reading\n");
-    uint32_t currentTime = gpioTick();
+    const uint32_t currentTime = gpioTick();
     if ((static_cast<int32_t>(currentTime - _lastReadTime) < MIN_INTERVAL_MICROS) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
         printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
         return _conversionOk; 
@@ -149,7 +148,7 @@ bool Dht::read() {
 
     uint32_t waitTime = gpioTick();
     // wait for the callback to complete reading.
-    gpioDelay(MINUMIM_READ_TIME_MICROS);
+    gpioDelay(MINIMUM_READ_TIME_MICROS);
     while (_sensorData->isReading()) {
         gpioDelay(WAIT_INTERVAL_MICROS);
     } 

@@ -30,16 +30,16 @@ std::string Homie::toString(float f) {
 }
 
 bool Homie::sendTemperature(float value) {
-    std::string topic = _nodePrefix + TEMPERATURE;
+	const std::string topic = _nodePrefix + TEMPERATURE;
     return sendMessage(topic, toString(value), false);
 }
 
 bool Homie::sendHumidity(float value) {
-    std::string topic = _nodePrefix + HUMIDITY;
+	const std::string topic = _nodePrefix + HUMIDITY;
     return sendMessage(topic, toString(value), false);
 }
 
-bool Homie::sendMessage(std::string topic, std::string message, bool retain) {
+bool Homie::sendMessage(std::string topic, const std::string& message, bool retain) {
     int returnValue = _mqtt->publish(nullptr, topic.c_str(), message.length(), message.c_str(), 0, retain);
     bool isConnected = returnValue == MOSQ_ERR_SUCCESS;
     if (isConnected != _isConnected) {
@@ -73,11 +73,11 @@ void Homie::shutdown() {
     _mqtt->shutdown();
 }
 
-void Homie::sendState(std::string state) {
+void Homie::sendState(const std::string& state) {
     sendMessage(_stateTopic, state);
 }
 
-void Homie::sendPropertyMetadata(std::string property, std::string unit) {
+void Homie::sendPropertyMetadata(const std::string& property, const std::string& unit) {
     sendMessage(_nodePrefix + property + "/" + NAME, property);
     sendMessage(_nodePrefix + property + "/$datatype", "float");
     sendMessage(_nodePrefix + property + "/$unit", unit);

@@ -2,11 +2,8 @@
 #define MQTT1_H
 
 #include <mosquittopp.h>
-#include <unordered_map>
-#include <string>
 #include <unistd.h>
 #include "Config.h"
-#include "ISender.h"
 
 class Mqtt : public mosqpp::mosquittopp {
 public:

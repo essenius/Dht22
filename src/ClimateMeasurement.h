@@ -16,7 +16,7 @@
 /// @brief Class to take climate measurements and send them to the communicator
 class ClimateMeasurement {
 public:
-    ClimateMeasurement(ISender* sender);
+	explicit ClimateMeasurement(ISender* sender);
     void begin();
     void processSample(float temperatureIn, float humidityIn);
 

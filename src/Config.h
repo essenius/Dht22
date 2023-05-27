@@ -3,7 +3,6 @@
 
 #include <unordered_map>
 #include <string>
-#include <unistd.h>
 #include <type_traits>
 
 using ConfigMap = std::unordered_map<std::string, std::string>;
@@ -29,18 +28,18 @@ private:
     const char* _clientId = nullptr;
     int _port = 1883;
     const char* _topicTemplate = nullptr;
-    int _keepalive = 60;
-    ConfigMap _config;
+    int _keepAlive = 60;
+    ConfigMap _config{};
 
     bool setDevice();
 
     template <typename T>
-    void set(T* myValue, ConfigMap::const_iterator iterator, std::true_type) const {
+    void set(T* myValue, const ConfigMap::const_iterator iterator, std::true_type) const {
         *myValue = static_cast<T>(std::stoi(iterator->second));
     }
 
     template <typename T>
-    void set(T* myValue, ConfigMap::const_iterator iterator, std::false_type) const {
+    void set(T* myValue, const ConfigMap::const_iterator iterator, std::false_type) const {
         *myValue = iterator->second;
     }
 };

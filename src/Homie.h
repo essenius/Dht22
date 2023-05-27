@@ -1,7 +1,6 @@
 #ifndef HOMIE_H
 #define HOMIE_H
 
-#include "SensorData.h"
 #include "Config.h"
 #include "Mqtt.h"
 
@@ -23,10 +22,10 @@ private:
     static constexpr const char* HUMIDITY = "humidity";
     static constexpr const char* NAME = "$name";
 
-    bool sendMessage(std::string topic, std::string message, bool retain = true);
-    void sendPropertyMetadata(std::string property, std::string unit);
-    void sendState(std::string state);
-    std::string toString(float f);
+    bool sendMessage(std::string topic, const std::string& message, bool retain = true);
+    void sendPropertyMetadata(const std::string& property, const std::string& unit);
+    void sendState(const std::string& state);
+    static std::string toString(float f);
 
     Mqtt* _mqtt;
     Config* _config;

@@ -42,3 +42,7 @@ build*/
 
 # config file
 config.txt
+*.DotSettings
+
+# VS code cache
+.vs

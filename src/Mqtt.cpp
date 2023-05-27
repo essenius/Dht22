@@ -31,10 +31,6 @@ bool Mqtt::begin() {
 
 bool Mqtt::connect1() {
     if (_isConnected) return true;
-//    char willTopic[256];
-//    snprintf(willTopic, sizeof(willTopic), _topicTemplate, STATE);
-//    constexpr const char* LOST = "lost";
-//    will_set(willTopic, strlen(LOST), LOST);
     if (_caCert != nullptr) {
         printf("setting ca cert %s\n", _caCert);
         if (tls_set(_caCert) != MOSQ_ERR_SUCCESS) {

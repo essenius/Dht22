@@ -4,8 +4,8 @@
 #include "Mqtt.h"
 #include "Homie.h"
 #include <pigpio.h>
-#include <stdio.h>
-#include <signal.h>
+#include <cstdio>
+#include <csignal>
 
 bool keepGoing = true;
 
@@ -50,8 +50,8 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
 }
 
 int main(int argc, char** argv) {
-   signal(SIGINT,signalHandler);
-   signal(SIGTERM,signalHandler);
+   (void)signal(SIGINT,signalHandler);
+   (void)signal(SIGTERM,signalHandler);
    if (argc > 1) return mainHelper(argv[1]);
    return mainHelper();
 }
