@@ -16,7 +16,7 @@ constexpr uint32_t MINIMUM_READ_TIME_MICROS = 3000;
 constexpr uint32_t WAIT_INTERVAL_MICROS = 500;
 // when powering down, wait at least 50 ms before powering up
 constexpr uint32_t SHUTDOWN_TIME_MICROS = 50000;
-constexpr int MAX_CONSECUTIVE_FAILURES = 5;
+constexpr int MAX_CONSECUTIVE_FAILURES = 10;
 
 Dht::Dht(SensorData* sensorData, Config* config) :  _sensorData(sensorData), _config(config) {}
 
@@ -37,10 +37,10 @@ bool Dht::begin() {
         if (gpioInitialise() < 0) return false;
     }
 
-    printf("Initialized GPIO, revision: %u\n", gpioHardwareRevision());
     gpioSetMode(_powerPin, PI_OUTPUT);
     gpioWrite(_powerPin, PI_HIGH);
     _startupTime = gpioTick();
+    printf("%u: Initialized GPIO v%u, HW revision: %u\n", _startupTime, gpioVersion(), gpioHardwareRevision());
     _lastReadTime = _startupTime - MIN_INTERVAL_MICROS;
     _nextScheduledRead = _startupTime + MIN_INTERVAL_MICROS;
     _consecutiveFailures = 0;
@@ -75,7 +75,7 @@ void Dht::reportResult(const bool success) {
 }
 
 void Dht::shutdown() {
-    printf("Shutting down DHT\n");
+    printf("%u: Shutting down DHT\n", gpioTick());
     gpioWrite(_powerPin, PI_LOW);
     gpioTerminate();
 }
@@ -84,6 +84,9 @@ void Dht::reset() {
     shutdown();
     gpioDelay(SHUTDOWN_TIME_MICROS);
     begin();
+    // Make sure that read() uses the previous reading (which is mist likely NAN).
+    // the sensor was just powered up, so we can't read it right away.
+    _lastReadTime = _startupTime;
 }
 
 bool Dht::waitForNextMeasurement(bool& keepGoing) {
