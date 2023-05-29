@@ -1,4 +1,4 @@
-#include <pigpiod_if2.h>
+#include <pigpio.h>
 #include <cstdio> 
 #include <cstring>
 #include <cmath>
@@ -11,13 +11,10 @@ constexpr uint32_t MIN_INTERVAL_MICROS =  2 * 1000 * 1000;
 // Measurement transmission should take no more than 7.5 ms. Give 2.5 ms extra.  
 constexpr int READ_TIMEOUT_MILLIS = 10;
 // we're waiting at least 79 * 40 us, i.e. about 3000 us. Usually it's 5-6 ms
-constexpr double MINIMUM_READ_TIME_SECONDS = 0.003;
 constexpr uint32_t MINIMUM_READ_TIME_MICROS = 3000;
 // don't check too often, but also not too seldom
-constexpr double WAIT_INTERVAL_SECONDS = 0.0005;
 constexpr uint32_t WAIT_INTERVAL_MICROS = 500;
 // when powering down, wait at least 50 ms before powering up
-constexpr double SHUTDOWN_TIME_SECONDS = 0.05;
 constexpr uint32_t SHUTDOWN_TIME_MICROS = 50000;
 constexpr int MAX_CONSECUTIVE_FAILURES = 5;
 
@@ -31,18 +28,19 @@ Dht::~Dht() {
 bool Dht::begin() {
     _config->setIfExists("dataPin", &_dataPin);
     _config->setIfExists("powerPin", &_powerPin);
-    //int cfg = gpioCfgGetInternals();
-    //cfg |= PI_CFG_NOSIGHANDLER;  
-    //gpioCfgSetInternals(cfg);
-    if (_piId = pigpio_start(nullptr, nullptr); _piId < 0) {
-        printf("Could not connect to pigpio daemon: error %d.\n", _piId);
-        return false;
+    int cfg = gpioCfgGetInternals();
+    cfg |= PI_CFG_NOSIGHANDLER;  
+    gpioCfgSetInternals(cfg);
+    if (gpioInitialise() < 0) {
+        printf("could not initialize GPIO. Terminating and re-initializing...\n");
+        gpioTerminate();
+        if (gpioInitialise() < 0) return false;
     }
 
     printf("Initialized GPIO, revision: %u\n", gpioHardwareRevision());
-    set_mode(_piId, _powerPin, PI_OUTPUT);
-    gpio_write(_piId, _powerPin, PI_HIGH);
-    _startupTime = get_current_tick(_piId);
+    gpioSetMode(_powerPin, PI_OUTPUT);
+    gpioWrite(_powerPin, PI_HIGH);
+    _startupTime = gpioTick();
     _lastReadTime = _startupTime - MIN_INTERVAL_MICROS;
     _nextScheduledRead = _startupTime + MIN_INTERVAL_MICROS;
     _consecutiveFailures = 0;
@@ -78,35 +76,32 @@ void Dht::reportResult(const bool success) {
 
 void Dht::shutdown() {
     printf("Shutting down DHT\n");
-    gpio_write(_piId, _powerPin, PI_LOW);
-    pigpio_stop(_piId);
+    gpioWrite(_powerPin, PI_LOW);
+    gpioTerminate();
 }
 
 void Dht::reset() {
     shutdown();
-    time_sleep(SHUTDOWN_TIME_SECONDS);
+    gpioDelay(SHUTDOWN_TIME_MICROS);
     begin();
 }
 
-bool Dht::waitForNextMeasurement(bool& keepGoing) {
-    uint32_t currentTime = get_current_tick(_piId);
+bool Dht::waitForNextMeasurement() {
+    uint32_t currentTime = gpioTick();
+    if (currentTime == PI_NOT_INITIALISED) return false;
     printf("Waiting\n");
-    int32_t waitTime;
-    for (; waitTime = static_cast<int32_t>(_nextScheduledRead - get_current_tick(_piId)), waitTime > 0 && keepGoing; ) {
-        auto timeToSleep = std::min(waitTime / 1000000.0, 0.1);
-        time_sleep(timeToSleep);
-    }
-    printf("Waited %u us for next measurement\n", get_current_tick(_piId) - currentTime);
-    if (waitTime < -10000) {
+    if (auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()); waitTime > 0) {
+        gpioDelay(waitTime);
+        printf("Waited %u us for next measurement\n", waitTime);
+    } else if (waitTime < -10000) {
         // if we're off more than 10 milliseconds, recalibrate. This could happen after connection issues
-        printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, get_current_tick(_piId));
-        _nextScheduledRead = get_current_tick(_piId);
+        printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, gpioTick());
+        _nextScheduledRead = gpioTick();
     }
     return true;
 }
 
-
-void pinCallback([[maybe_unused]] int pi, [[maybe_unused]] unsigned gpio, unsigned level, uint32_t tick, void *userData) {
+void pinCallback([[maybe_unused]] int gpio, int level, uint32_t tick, void *userData) {
 	auto*data = static_cast<SensorData*>(userData);
     data->addEdge(level, tick);
 }
@@ -115,7 +110,7 @@ void pinCallback([[maybe_unused]] int pi, [[maybe_unused]] unsigned gpio, unsign
 /// @return whether a valid result is available. A cached result of less than two seconds old is considered valid.
 bool Dht::read() {
     printf("Reading\n");
-    const uint32_t currentTime = get_current_tick(_piId);
+    const uint32_t currentTime = gpioTick();
     if ((static_cast<int32_t>(currentTime - _lastReadTime) < MIN_INTERVAL_MICROS) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
         printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
         return _conversionOk; 
@@ -129,39 +124,39 @@ bool Dht::read() {
     //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf
 
     // Pull up the data line and wait a millisecond.
-    set_mode(_piId, _dataPin, PI_INPUT);
-    set_pull_up_down(_piId, _dataPin, PI_PUD_UP);
-    time_sleep(0.001);
+    gpioSetMode(_dataPin, PI_INPUT);
+    gpioSetPullUpDown(_dataPin, PI_PUD_UP);
+    gpioDelay(1000);
 
     // Set data line low for 1.1 ms (which satisfies "at least 1ms" for DHT22)
 
-    set_mode(_piId, _dataPin, PI_OUTPUT);
-    gpio_write(_piId, _dataPin, PI_LOW);
+    gpioSetMode(_dataPin, PI_OUTPUT);
+    gpioWrite(_dataPin, PI_LOW);
 
-    time_sleep(0.0011); 
+    gpioDelay(1100); 
 
-    _sensorData->initRead(get_current_tick(_piId));
+    _sensorData->initRead(gpioTick());
 
     // Pull up the data line again, and let the sensor take over.
-    set_mode(_piId, _dataPin, PI_INPUT);
-    set_pull_up_down(_piId, _dataPin, PI_PUD_UP);
+    gpioSetMode(_dataPin, PI_INPUT);
+    gpioSetPullUpDown(_dataPin, PI_PUD_UP);
 
     // monitor the pin for changes 
-    auto callbackId = callback_ex(_piId, _dataPin, EITHER_EDGE, pinCallback, _sensorData);
+    gpioSetAlertFuncEx(_dataPin, pinCallback, _sensorData);
     // time out if we don't get a change on time
-    set_watchdog(_piId, _dataPin, READ_TIMEOUT_MILLIS); 
+    gpioSetWatchdog(_dataPin, READ_TIMEOUT_MILLIS); 
 
-    uint32_t waitTime = get_current_tick(_piId);
+    uint32_t waitTime = gpioTick();
     // wait for the callback to complete reading.
-    time_sleep(MINIMUM_READ_TIME_SECONDS);
+    gpioDelay(MINIMUM_READ_TIME_MICROS);
     while (_sensorData->isReading()) {
-        time_sleep(WAIT_INTERVAL_SECONDS);
+        gpioDelay(WAIT_INTERVAL_MICROS);
     } 
-    waitTime = get_current_tick(_piId) - waitTime;
+    waitTime = gpioTick() - waitTime;
 
     // stop the watch dog and the callback
-    set_watchdog(_piId, _dataPin, 0);
-    callback_cancel(callbackId);
+    gpioSetWatchdog(_dataPin, 0);
+    gpioSetAlertFuncEx(_dataPin, nullptr, nullptr);
     printf("Waited %u ns for data\n", waitTime);
 
     _humidity = _sensorData->getHumidity();
