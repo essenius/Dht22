@@ -21,9 +21,10 @@ void SensorData::addEdge(const int levelIn, const uint32_t timestamp) {
         case 0:
             {
 	            const auto dataIndex = (_currentIndex - START_EDGE) / 16;
-                _data[dataIndex] <<= 1;
+                // shift left by 1
+                _data[dataIndex] *= 2;
                 if (duration > _referenceDuration) {
-                    _data[dataIndex] |= 1;
+                    _data[dataIndex] += 1;
                 }
             }
             break;

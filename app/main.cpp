@@ -1,23 +1,33 @@
+#include "OS.h"
 #include "ClimateMeasurement.h"
 #include "Config.h"
 #include "Dht.h"
 #include "Mqtt.h"
 #include "Homie.h"
-#include <pigpio.h>
 #include <cstdio>
 #include <csignal>
 
 bool keepGoing = true;
+int signalCount = 0;
 
-void signalHandler(sig_atomic_t s){
+void signalHandler(sig_atomic_t s) {
+   printf("Caught signal %d\n",s);
+   signalCount++;
    keepGoing = false;
+   if (signalCount > 10) {
+      printf("Too many signals, exiting\n");
+      exit(1);
+   }
 }
 
 int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
-   SensorData sensorData;
+   OS os;
    Config config;
-   config.begin(configFile);
-   printf("Config began, device=%s\n", config.getEntry("device", "unknown"));
+   printf("Config defined, hostname=%s\n", os.getHostName().c_str());
+   config.begin(configFile, os.getHostName().c_str());
+   printf("Config began, device=%s\n", config.getEntry("device", "unknown").c_str());
+   SensorData sensorData;
+   printf("SensorData defined\n");
    Mqtt mqtt(&config);
    printf("MQTT defined\n");
    Homie homie(&mqtt, &config);
@@ -52,6 +62,7 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
 int main(int argc, char** argv) {
    (void)signal(SIGINT,signalHandler);
    (void)signal(SIGTERM,signalHandler);
+   (void)signal(SIGSEGV, signalHandler);
    if (argc > 1) return mainHelper(argv[1]);
    return mainHelper();
 }

@@ -12,5 +12,5 @@ port=8883
 # If user and password are defined, we use authentication
 user=mqtt_user
 password=mqtt_password
-# The topic to publish the data to. The %s is replaced by the item (humidity, temperature, error, state)
-topicTemplate=sensors/device/%s
+# The Homie node (under device) to publish the data to.
+node=climate

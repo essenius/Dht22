@@ -2,10 +2,7 @@
 #include <cstring>
 #include <iostream>
 
-Homie::Homie(Mqtt *mqtt, Config* config) {
-    _mqtt = mqtt;
-    _config = config;
-}
+Homie::Homie(Mqtt *mqtt, Config* config): _mqtt(mqtt), _config(config) {}
 
 Homie::~Homie() {
     printf("Homie destructor\n");
@@ -39,14 +36,14 @@ bool Homie::sendHumidity(float value) {
     return sendMessage(topic, toString(value), false);
 }
 
-bool Homie::sendMessage(std::string topic, const std::string& message, bool retain) {
-    int returnValue = _mqtt->publish(nullptr, topic.c_str(), message.length(), message.c_str(), 0, retain);
+bool Homie::sendMessage(const std::string& topic, const std::string& message, bool retain) {
+    int returnValue = _mqtt->publish(nullptr, topic.c_str(), static_cast<int>(message.length()), message.c_str(), 0, retain);
     bool isConnected = returnValue == MOSQ_ERR_SUCCESS;
     if (isConnected != _isConnected) {
         _isConnected = isConnected;
         if (isConnected) sendState("ready");
     } 
-    return (isConnected);
+    return isConnected;
 }
 
 bool Homie::sendMetadata() {

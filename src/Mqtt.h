@@ -7,14 +7,13 @@
 
 class Mqtt : public mosqpp::mosquittopp {
 public:
-    Mqtt(const Config* config);
+    explicit Mqtt(const Config* config);
     ~Mqtt();
     bool begin();
-    bool isConnected() { return _isConnected; }
-    bool connect1();
+    bool isConnected() const { return _isConnected; }
     void shutdown();
     bool verifyConnection();
-    bool waitForConnection(bool& keepGoing);
+    bool waitForConnection(bool& keepGoing) const;
 
 private:
     const Config* _config;
@@ -25,13 +24,11 @@ private:
     int _port = 1883;
     int _keepAliveSeconds = 60;
     bool _isConnected = false;
+    bool firstConnect();
     void on_connect(int rc) override;
     void on_disconnect(int rc) override;
     void on_publish(int mid) override;
     void on_log(int level, const char* str) override;
-
-//    bool sendString(const char *item, const char *message);
-
 };
 
 #endif

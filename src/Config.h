@@ -4,17 +4,18 @@
 #include <unordered_map>
 #include <string>
 #include <type_traits>
+#include "OS.h"
 
 using ConfigMap = std::unordered_map<std::string, std::string>;
 
 class Config {
 public:
-    bool begin(const char* fileName);
+    bool begin(const std::string& fileName, const std::string& hostName = "");
 
-    const char* getEntry(const char* key, const char* defaultValue = nullptr) const;
+    std::string getEntry(const std::string& key, const std::string& defaultValue = "") const;
 
     template <typename T>
-    void setIfExists(const char* key, T* myValue) const {
+    void setIfExists(const std::string& key, T* myValue) const {
         auto iterator = _config.find(key);
         if (iterator == _config.end()) {
             return;
@@ -23,15 +24,10 @@ public:
     }
 
 private:
-    const char* _broker = nullptr;
-    const char* _caCert = nullptr;
-    const char* _clientId = nullptr;
-    int _port = 1883;
-    const char* _topicTemplate = nullptr;
-    int _keepAlive = 60;
     ConfigMap _config{};
 
-    bool setDevice();
+    void readStream(std::istream & inputStream);
+    bool setDevice(std::string_view hostName);
 
     template <typename T>
     void set(T* myValue, const ConfigMap::const_iterator iterator, std::true_type) const {

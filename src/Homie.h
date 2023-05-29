@@ -3,11 +3,12 @@
 
 #include "Config.h"
 #include "Mqtt.h"
+#include "ISender.h"
 
 class Homie : public ISender {
 public:
     Homie(Mqtt* mqtt, Config* config);
-    ~Homie();
+    virtual ~Homie();
     bool begin();
     bool sendHumidity(float value) override;
     bool sendMetadata();
@@ -22,7 +23,7 @@ private:
     static constexpr const char* HUMIDITY = "humidity";
     static constexpr const char* NAME = "$name";
 
-    bool sendMessage(std::string topic, const std::string& message, bool retain = true);
+    bool sendMessage(const std::string& topic, const std::string& message, bool retain = true);
     void sendPropertyMetadata(const std::string& property, const std::string& unit);
     void sendState(const std::string& state);
     static std::string toString(float f);

@@ -32,12 +32,12 @@ bool Dht::begin() {
     cfg |= PI_CFG_NOSIGHANDLER;  
     gpioCfgSetInternals(cfg);
     if (gpioInitialise() < 0) {
-        printf("could not init GPIO\n");
+        printf("could not initialize GPIO. Terminating and re-initializing...\n");
         gpioTerminate();
         if (gpioInitialise() < 0) return false;
     }
 
-    printf("Initialized pigpio, revision: %u\n", gpioHardwareRevision());
+    printf("Initialized GPIO, revision: %u\n", gpioHardwareRevision());
     gpioSetMode(_powerPin, PI_OUTPUT);
     gpioWrite(_powerPin, PI_HIGH);
     _startupTime = gpioTick();
@@ -101,7 +101,7 @@ bool Dht::waitForNextMeasurement() {
     return true;
 }
 
-void pinCallback(int gpio, int level, uint32_t tick, void *userData) {
+void pinCallback([[maybe_unused]] int gpio, int level, uint32_t tick, void *userData) {
 	auto*data = static_cast<SensorData*>(userData);
     data->addEdge(level, tick);
 }

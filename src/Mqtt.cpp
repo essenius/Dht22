@@ -7,29 +7,23 @@
 
 #include <fstream>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
-
-using namespace std;
-
-constexpr const char* STATE = "state";
-
-Mqtt::Mqtt(const Config* config) : mosquittopp(config->getEntry("device")) {
-    _config = config;
-};
+Mqtt::Mqtt(const Config* config) : mosquittopp(config->getEntry("device").c_str()), _config(config) {}
 
 bool Mqtt::begin() {
-    _caCert = _config->getEntry("caCert");
-    _broker = _config->getEntry("broker", "localhost");
+    _caCert = _config->getEntry("caCert").c_str();
+    _broker = _config->getEntry("broker", "localhost").c_str();
     _config->setIfExists("port", &_port);
-    _user = _config->getEntry("user");
-    _password = _config->getEntry("password");
+    _user = _config->getEntry("user").c_str();
+    _password = _config->getEntry("password").c_str();
     _config->setIfExists("keepAliveSeconds", &_keepAliveSeconds);
 
-    return connect1();
+    return firstConnect();
 }
 
-
-bool Mqtt::connect1() {
+bool Mqtt::firstConnect() {
     if (_isConnected) return true;
     if (_caCert != nullptr) {
         printf("setting ca cert %s\n", _caCert);
@@ -61,37 +55,37 @@ bool Mqtt::connect1() {
 }
 
 void Mqtt::shutdown() {
-    cout << "##-Mqtt Shutdown-##" << endl; 
+    std::cout << "##-Mqtt Shutdown-##" << std::endl; 
     disconnect();
     loop_stop();
 }
 
 Mqtt::~Mqtt() {
+    std::cout << "##-Mqtt Destructor-##" << std::endl; 
     shutdown();
-    cout << "##-Mqtt Destructor-##" << endl; 
 }
 
 void Mqtt::on_connect(int rc) {
     _isConnected = (rc == MOSQ_ERR_SUCCESS);
     if (_isConnected) {
-        cout << "## Connected" << std::endl;
+        std::cout << "## Connected" << std::endl;
     }
     else {
-        cout << "## Failed connecting - code " << rc << std::endl;
+        std::cout << "## Failed connecting - code " << rc << std::endl;
     }
 }
 
 void Mqtt::on_disconnect(int rc) {
-    cout << " ##-Disconnected from Broker-## " << rc << std::endl;
+    std::cout << " ##-Disconnected from Broker-## " << rc << std::endl;
     _isConnected = false;
 }
 
 void Mqtt::on_publish(int mid) {
-    cout << "## - Message published successfully: " << mid << endl;
+    std::cout << "## - Message published successfully: " << mid << std::endl;
 }
 
 void Mqtt::on_log(int level, const char* str) {
-    cout << "## - Log: " << level << "-" << str << endl;
+    std::cout << "## - Log: " << level << "-" << str << std::endl;
 }
 
 bool Mqtt::verifyConnection() {
@@ -102,12 +96,13 @@ bool Mqtt::verifyConnection() {
     return waitForConnection(keepGoing);
 }
 
-bool Mqtt::waitForConnection(bool& keepGoing) {
+bool Mqtt::waitForConnection(bool& keepGoing) const { 
     // we don't wait more than 5 seconds
     constexpr int MAX_WAIT_DECISECONDS = 50;
-    int repeatCount = 0;
-    while(keepGoing && !_isConnected && repeatCount++ < MAX_WAIT_DECISECONDS) { 
-      usleep(100000); 
-   }
-   return keepGoing && repeatCount < MAX_WAIT_DECISECONDS;
+    for (int i = 0; i < MAX_WAIT_DECISECONDS; i++) {
+        if (_isConnected) return true;
+        if (!keepGoing) return false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+   return _isConnected;
 }

@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include "Config.h"
 #ifdef _WIN32
@@ -8,16 +9,10 @@
 #include <unistd.h>
 #endif
 #include <cstring>
-#include <algorithm>
 
-bool Config::begin(const char* fileName) {
-    std::ifstream inputFile(fileName);
-    if (!inputFile.is_open()) {
-        std::cerr << "Failed to open config file '" << fileName << "'\n";
-        return false;
-    }
+void Config::readStream(std::istream& inputStream) {
     std::string line;
-    while (std::getline(inputFile, line)) {
+    while (std::getline(inputStream, line)) {
         // ignore comments
         if (line.rfind('#', 0) == 0) {
             continue;
@@ -29,27 +24,35 @@ bool Config::begin(const char* fileName) {
             _config[entity] = value;
         }
     }
-    inputFile.close();
-    return setDevice();
+    if (_config.empty()) {
+        std::cout << "Warning: did not find valid config data\n";
+    }
 }
 
-bool Config::setDevice() {
-    if (const auto device = getEntry("device"); device != nullptr) return true;
-    printf("setting device to host name\n");
-    char hostName[_SC_HOST_NAME_MAX];
-    if (gethostname(hostName, _SC_HOST_NAME_MAX) != 0) {
-        std::cerr << "Failed to get device name\n";
+bool Config::begin(const std::string& configInput, const std::string& hostName) {
+    if (std::ifstream inputFile(configInput); !inputFile.is_open()) {
+        std::stringstream stringStream(configInput);
+        readStream(stringStream);
+    } else {
+        readStream(inputFile);
+    }
+    return setDevice(hostName);
+}
+
+bool Config::setDevice(std::string_view hostName) {
+    if (const auto device = getEntry("device"); !device.empty()) return true;
+    if (hostName.empty()) {
+        std::cerr << "'device' not set in config, and failed to determine device name\n";
         return false;
     }
-    std::transform(hostName, hostName + strlen(hostName), hostName, ::tolower);
     _config["device"] = hostName;
     return true;
 }
 
-const char* Config::getEntry(const char* key, const char* defaultValue) const {
+std::string Config::getEntry(const std::string& key, const std::string& defaultValue) const {
 	const auto iterator = _config.find(key);
     if (iterator == _config.end()) {
         return defaultValue;
     }
-    return iterator->second.c_str();
+    return iterator->second;
 }

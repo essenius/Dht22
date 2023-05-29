@@ -24,7 +24,7 @@ add_executable(${dhtTestName} "")
 #file(GLOB_RECURSE mySources LIST_DIRECTORIES true *.cpp)
 
 set(myHeaders "")
-set(mySources DhtTest.cpp SensorDataTest.cpp Main.cpp)
+set(mySources ConfigTest.cpp MqttTest.cpp SensorDataTest.cpp Main.cpp)
 
 target_sources (${dhtTestName} PRIVATE ${myHeaders} PRIVATE ${mySources})
 
