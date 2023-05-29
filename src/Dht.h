@@ -14,9 +14,10 @@ public:
     float readTemperature();
     void reset();
     void shutdown();
-    bool waitForNextMeasurement();
+    bool waitForNextMeasurement(bool& keepGoing);
 
 private:
+    int _piId = -1;
     uint8_t _powerPin = 4;
     uint8_t _dataPin = 17;
     SensorData* _sensorData;

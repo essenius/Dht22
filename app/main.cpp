@@ -49,7 +49,7 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
    printf("Starting Main loop\n");
    while (keepGoing) {
       // ensure we don't reset the flag if break was pressed
-      keepGoing &= mqtt.verifyConnection() && dht.waitForNextMeasurement();
+      keepGoing &= mqtt.verifyConnection() && dht.waitForNextMeasurement(keepGoing);
       if (!keepGoing) break;
       auto temperature = dht.readTemperature();
       auto humidity = dht.readHumidity();
