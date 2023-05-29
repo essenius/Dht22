@@ -14,7 +14,7 @@ public:
     float readTemperature();
     void reset();
     void shutdown();
-    bool waitForNextMeasurement();
+    bool waitForNextMeasurement(bool& keepGoing);
 
 private:
     uint8_t _powerPin = 4;

@@ -86,14 +86,17 @@ void Dht::reset() {
     begin();
 }
 
-bool Dht::waitForNextMeasurement() {
+bool Dht::waitForNextMeasurement(bool& keepGoing) {
     uint32_t currentTime = gpioTick();
     if (currentTime == PI_NOT_INITIALISED) return false;
     printf("Waiting\n");
-    if (auto waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()); waitTime > 0) {
-        gpioDelay(waitTime);
-        printf("Waited %u us for next measurement\n", waitTime);
-    } else if (waitTime < -10000) {
+    int32_t waitTime;
+    for (; waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()), waitTime > 0 && keepGoing;) {
+        auto timeToSleep = std::min(waitTime, 100000);
+        gpioDelay(timeToSleep);
+    }
+    printf("Waited %u us for next measurement\n", gpioTick() - currentTime);
+    if (waitTime < -10000) {
         // if we're off more than 10 milliseconds, recalibrate. This could happen after connection issues
         printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, gpioTick());
         _nextScheduledRead = gpioTick();
