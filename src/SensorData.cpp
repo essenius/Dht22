@@ -1,5 +1,6 @@
 #include "SensorData.h"
 #include <cmath>
+#include <cstdio>
 
 /// @brief Add an edge to the data. Called from callback, so needs to be fast.
 /// Compare the low and high cycle times to see if the bit is a 0 or 1. 

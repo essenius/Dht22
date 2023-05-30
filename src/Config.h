@@ -4,15 +4,14 @@
 #include <unordered_map>
 #include <string>
 #include <type_traits>
-#include "OS.h"
 
 using ConfigMap = std::unordered_map<std::string, std::string>;
 
 class Config {
 public:
-    bool begin(const std::string& fileName, const std::string& hostName = "");
+    bool begin(const std::string& configInput, const std::string& hostName = "");
 
-    std::string getEntry(const std::string& key, const std::string& defaultValue = "") const;
+    [[nodiscard]] std::string getEntry(const std::string& key, const std::string& defaultValue = "") const;
 
     template <typename T>
     void setIfExists(const std::string& key, T* myValue) const {
@@ -35,7 +34,7 @@ private:
     }
 
     template <typename T>
-    void set(T* myValue, const ConfigMap::const_iterator iterator, std::false_type) const {
+    static void set(T* myValue, const ConfigMap::const_iterator iterator, std::false_type) {
         *myValue = iterator->second;
     }
 };

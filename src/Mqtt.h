@@ -2,7 +2,6 @@
 #define MQTT1_H
 
 #include <mosquittopp.h>
-#include <unistd.h>
 #include "Config.h"
 
 class Mqtt : public mosqpp::mosquittopp {

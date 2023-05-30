@@ -91,12 +91,12 @@ float ClimateMeasurement::average(float input[], const int sampleSize) {
 /// @brief Calculate the average of the measurements and round it to 1 decimal
 /// @param input the measurements
 /// @param length  the number of measurements
-/// @return 
+/// @return rounded average
 float ClimateMeasurement::roundedAverage(float input[], const int length) {
     // round is tricky. It converts NAN to zero, and it calls arguments twice.
     const auto result = average(input, length);
     if (std::isnan(result)) {
         return NAN;
     }
-    return round(result * 10.0) / 10.0;
+    return round(result * 10.0f) / 10.0f;
 }

@@ -2,13 +2,6 @@
 #include <sstream>
 #include <iostream>
 #include "Config.h"
-#ifdef _WIN32
-#include <winsock.h>
-#define _SC_HOST_NAME_MAX 128
-#else
-#include <unistd.h>
-#endif
-#include <cstring>
 
 void Config::readStream(std::istream& inputStream) {
     std::string line;

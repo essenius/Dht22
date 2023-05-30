@@ -2,7 +2,6 @@
 #define SENSORDATA_H
 
 #include <cstdint>
-#include <stdio.h>
 #include <array>
 
 constexpr int EDGES = 84;

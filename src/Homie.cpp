@@ -22,8 +22,8 @@ bool Homie::begin() {
 
 std::string Homie::toString(float f) {
     char buffer[20];
-    snprintf(buffer, sizeof(buffer), "%.1f", f);
-    return std::string(buffer);
+    (void)snprintf(buffer, sizeof(buffer), "%.1f", f);
+    return { buffer };
 }
 
 bool Homie::sendTemperature(float value) {
