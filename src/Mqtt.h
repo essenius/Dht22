@@ -10,6 +10,10 @@ public:
     ~Mqtt();
     bool begin();
     bool isConnected() const { return _isConnected; }
+    void on_connect(int rc) override;
+    void on_disconnect(int rc) override;
+    void on_publish(int mid) override;
+    void on_log(int level, const char* str) override;
     void shutdown();
     bool verifyConnection();
     bool waitForConnection(bool& keepGoing) const;
@@ -20,14 +24,11 @@ private:
     const char* _caCert = nullptr;
     const char* _user = nullptr;
     const char* _password = nullptr;
+    int _errorCode = 0;
     int _port = 1883;
     int _keepAliveSeconds = 60;
     bool _isConnected = false;
     bool firstConnect();
-    void on_connect(int rc) override;
-    void on_disconnect(int rc) override;
-    void on_publish(int mid) override;
-    void on_log(int level, const char* str) override;
 };
 
 #endif

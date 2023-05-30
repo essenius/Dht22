@@ -33,6 +33,4 @@ private:
     void reportResult(bool success);
 };
 
-
-
 #endif

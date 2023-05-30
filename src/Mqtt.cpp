@@ -24,15 +24,14 @@ bool Mqtt::begin() {
 }
 
 bool Mqtt::firstConnect() {
-    if (_isConnected) return true;
-    if (_caCert != nullptr) {
+    if (strlen(_caCert) > 0) {
         printf("setting ca cert %s\n", _caCert);
         if (tls_set(_caCert) != MOSQ_ERR_SUCCESS) {
             std::cerr << "failed\n";
             return false;
-        };
+        }
     }
-    if (_user != nullptr) {
+    if (strlen(_user) > 0) {
         printf("setting user %s\n", _user);
         if (username_pw_set(_user, _password) != MOSQ_ERR_SUCCESS) {
             std::cerr << "failed\n";
@@ -41,8 +40,9 @@ bool Mqtt::firstConnect() {
     }
 
     printf("Connecting to %s:%d, with keepalive %d\n", _broker, _port, _keepAliveSeconds);
-    if (auto rc = connect(_broker, _port, _keepAliveSeconds) == MOSQ_ERR_ERRNO) {
-        std::cerr << "Failed, error: " << strerror(rc) << "\n";
+    if (int rc = connect(_broker, _port, _keepAliveSeconds); rc != MOSQ_ERR_SUCCESS) {
+        _errorCode = rc;
+        std::cerr << "Connect failed, error: " << rc << "/" << mosqpp::strerror(rc) << "\n";
         return false;
     }
 
@@ -66,17 +66,19 @@ Mqtt::~Mqtt() {
 }
 
 void Mqtt::on_connect(int rc) {
+    _errorCode = rc;
     _isConnected = (rc == MOSQ_ERR_SUCCESS);
     if (_isConnected) {
         std::cout << "## Connected" << std::endl;
     }
     else {
-        std::cout << "## Failed connecting - code " << rc << std::endl;
+        std::cout << "## Failed connecting - code " << rc << ": " << mosqpp::strerror(rc) << std::endl;
     }
 }
 
 void Mqtt::on_disconnect(int rc) {
-    std::cout << " ##-Disconnected from Broker-## " << rc << std::endl;
+    std::cout << " ##-Disconnected from Broker-## " << rc << ": " << mosqpp::strerror(rc) << std::endl;
+    _errorCode = rc;
     _isConnected = false;
 }
 
