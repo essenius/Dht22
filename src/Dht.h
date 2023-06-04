@@ -15,6 +15,7 @@ public:
     void reset();
     void shutdown();
     bool waitForNextMeasurement(bool& keepGoing);
+    void trace() { _trace = true; }
 
 private:
     uint8_t _powerPin = 4;
@@ -27,9 +28,11 @@ private:
     bool _conversionOk = false;
     float _humidity = 0.0f;
     float _temperature = 0.0f;
+    bool _trace = false;
     unsigned int _consecutiveFailures = 0;
 
     bool read();
+    void log(const std::string& message, bool trace = false);
     void reportResult(bool success);
 };
 

@@ -91,7 +91,7 @@ void Dht::reset() {
 
 bool Dht::waitForNextMeasurement(bool& keepGoing) {
     uint32_t currentTime = gpioTick();
-    if (currentTime == PI_NOT_INITIALISED) return false;
+    if (currentTime == static_cast<uint32_t>(PI_NOT_INITIALISED)) return false;
     printf("Waiting\n");
     int32_t waitTime;
     for (; waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()), waitTime > 0 && keepGoing;) {
@@ -117,7 +117,7 @@ void pinCallback([[maybe_unused]] int gpio, int level, uint32_t tick, void *user
 bool Dht::read() {
     printf("Reading\n");
     const uint32_t currentTime = gpioTick();
-    if ((static_cast<int32_t>(currentTime - _lastReadTime) < MIN_INTERVAL_MICROS) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
+    if ((static_cast<int32_t>(currentTime - _lastReadTime) < static_cast<int32_t>(MIN_INTERVAL_MICROS)) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
         printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
         return _conversionOk; 
     }
@@ -156,18 +156,29 @@ bool Dht::read() {
     // wait for the callback to complete reading.
     gpioDelay(MINIMUM_READ_TIME_MICROS);
     while (_sensorData->isReading()) {
+        log("Waiting for data", true);
         gpioDelay(WAIT_INTERVAL_MICROS);
     } 
     waitTime = gpioTick() - waitTime;
 
     // stop the watch dog and the callback
+    log("Stopping watchdog", true);
     gpioSetWatchdog(_dataPin, 0);
+    log("Stopping callback", true);
     gpioSetAlertFuncEx(_dataPin, nullptr, nullptr);
     printf("Waited %u ns for data\n", waitTime);
 
+    log("getting humidity", true);
     _humidity = _sensorData->getHumidity();
+    log("getting temperature", true);
     _temperature = _sensorData->getTemperature();
     _conversionOk = _sensorData->isDone();
     reportResult(_conversionOk);
     return _conversionOk;
+}
+
+void Dht::log(const std::string& message, bool trace) {
+    if (!trace || (trace & _trace)) {
+        printf("%u: %s\n", gpioTick(), message.c_str());
+    }
 }

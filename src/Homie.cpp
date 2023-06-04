@@ -2,11 +2,14 @@
 #include <cstring>
 #include <iostream>
 
-Homie::Homie(Mqtt *mqtt, Config* config): _mqtt(mqtt), _config(config) {}
+Homie::Homie(Queuing::Mqtt *mqtt, Config* config): _mqtt(mqtt), _config(config) {}
 
 Homie::~Homie() {
     printf("Homie destructor\n");
-    shutdown();
+    if (_mqtt->isConnected()) {
+        printf("Disconnecting from MQTT broker\n");
+        sendState("disconnected");
+    }
 }
 
 bool Homie::begin() {
@@ -15,8 +18,7 @@ bool Homie::begin() {
     _prefix = std::string(HOMIE_PREFIX) + "/" + _deviceName + "/";
     _nodePrefix = _prefix + _nodeName + "/";
     _stateTopic = _prefix + "$state";
-
-    _mqtt->will_set(_stateTopic.c_str(), strlen(LOST), LOST);
+    _mqtt->setWill(_stateTopic);
     return _mqtt->begin();
 }
 
@@ -37,10 +39,12 @@ bool Homie::sendHumidity(float value) {
 }
 
 bool Homie::sendMessage(const std::string& topic, const std::string& message, bool retain) {
-    int returnValue = _mqtt->publish(nullptr, topic.c_str(), static_cast<int>(message.length()), message.c_str(), 0, retain);
+    int returnValue = _mqtt->publish(topic, message, retain);
+    std::cout << "MQTT publish t=" << topic << " m=" << message << " r=" << retain << " rv=" << returnValue << "_c=" << _isConnected << std::endl;
     bool isConnected = returnValue == MOSQ_ERR_SUCCESS;
     if (isConnected != _isConnected) {
         _isConnected = isConnected;
+        std::cout << "MQTT connected=" << _isConnected << std::endl;
         if (isConnected) sendState("ready");
     } 
     return isConnected;
@@ -59,15 +63,6 @@ bool Homie::sendMetadata() {
     sendPropertyMetadata(TEMPERATURE, "°C");
     sendPropertyMetadata(HUMIDITY, "%");
     return true;
-}
-
-void Homie::shutdown() {
-    printf("Shutdown Homie\n");
-    if (_mqtt->isConnected()) {
-        printf("Disconnecting from MQTT broker\n");
-        sendState("disconnected");
-    }
-    _mqtt->shutdown();
 }
 
 void Homie::sendState(const std::string& state) {

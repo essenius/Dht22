@@ -7,18 +7,16 @@
 
 class Homie : public ISender {
 public:
-    Homie(Mqtt* mqtt, Config* config);
+    Homie(Queuing::Mqtt* mqtt, Config* config);
     virtual ~Homie();
     bool begin();
     bool sendHumidity(float value) override;
     bool sendMetadata();
     bool sendTemperature(float value) override;
-    void shutdown();
 
 private:
     static constexpr const char* HOMIE_PREFIX = "homie";
     static constexpr const char* HOMIE_VERSION = "4.0.0";
-    static constexpr const char* LOST = "lost";
     static constexpr const char* TEMPERATURE =  "temperature";
     static constexpr const char* HUMIDITY = "humidity";
     static constexpr const char* NAME = "$name";
@@ -28,7 +26,7 @@ private:
     void sendState(const std::string& state);
     static std::string toString(float f);
 
-    Mqtt* _mqtt;
+    Queuing::Mqtt* _mqtt;
     Config* _config;
     bool _isConnected = false;
     std::string _deviceName;

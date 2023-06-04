@@ -2,12 +2,12 @@ include(tools)
 
 assertVariableSet(dhtName)
 
-if (NOT MOSQUITTOPP_INCLUDE_DIR)
-    find_path(MOSQUITTOPP_INCLUDE_DIR mosquitto.h)
+if (NOT MOSQUITTO_INCLUDE_DIR)
+    find_path(MOSQUITTO_INCLUDE_DIR mosquitto.h)
 endif()
 
-if (NOT MOSQUITTOPP_LIB)
-    find_library(MOSQUITTOPP_LIB mosquittopp)
+if (NOT MOSQUITTO_LIB)
+    find_library(MOSQUITTO_LIB mosquitto)
 endif()
 
 if (NOT PIGPIO_INCLUDE_DIR)
@@ -21,8 +21,8 @@ endif()
 
 find_library(pigpio pigpio)
 
-message(STATUS "MOSQUITTOPP_INCLUDE_DIR=${MOSQUITTOPP_INCLUDE_DIR}")
-message(STATUS "MOSQUITTOPP_LIB=${MOSQUITTOPP_LIB}")
+message(STATUS "MOSQUITTO_INCLUDE_DIR=${MOSQUITTO_INCLUDE_DIR}")
+message(STATUS "MOSQUITTO_LIB=${MOSQUITTO_LIB}")
 message(STATUS "PIGPIO_INCLUDE_DIR=${PIGPIO_INCLUDE_DIR}")
 message(STATUS "PIGPIO_LIB=${PIGPIO_LIB}")
 
@@ -31,5 +31,5 @@ add_library(${dhtName} "")
 set(myHeaders ClimateMeasurement.h Config.h Dht.h Homie.h ISender.h Mqtt.h OS.h SensorData.h)
 set(mySources ClimateMeasurement.cpp Config.cpp Dht.cpp Homie.cpp Mqtt.cpp OS.cpp SensorData.cpp)
 target_sources (${dhtName} PUBLIC ${myHeaders} PRIVATE ${mySources})
-target_include_directories(${dhtName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${MOSQUITTOPP_INCLUDE_DIR} ${PIGPIO_INCLUDE_DIR})
-target_link_libraries(${dhtName} ${PIGPIO_LIB} ${MOSQUITTOPP_LIB})
+target_include_directories(${dhtName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${MOSQUITTO_INCLUDE_DIR} ${PIGPIO_INCLUDE_DIR})
+target_link_libraries(${dhtName} ${PIGPIO_LIB} ${MOSQUITTO_LIB})

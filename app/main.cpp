@@ -28,7 +28,7 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
    printf("Config began, device=%s\n", config.getEntry("device", "unknown").c_str());
    SensorData sensorData;
    printf("SensorData defined\n");
-   Mqtt mqtt(&config);
+   Queuing::Mqtt mqtt(&config, &keepGoing);
    printf("MQTT defined\n");
    Homie homie(&mqtt, &config);
    Dht dht(&sensorData, &config);
@@ -41,7 +41,7 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
    // now gpioInitialise has succeeded. We need to ensure to shutdown before exiting
    // This happens in the destructor of dht (hence the signal handler for break and terminate).
    printf("Waiting to connect\n");
-   if (!mqtt.waitForConnection(keepGoing)) return(keepGoing ? -3 : -4);
+   if (!mqtt.waitForConnection()) return(keepGoing ? -3 : -4);
    printf("Connected to MQTT\n");
    if (!homie.sendMetadata()) return -5;
    printf("Sent metadata\n"); 
