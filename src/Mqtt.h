@@ -17,7 +17,7 @@ namespace Queuing {
         bool begin();
         int errorCode() const { return _errorCode; }
         bool isConnected() const { return _isConnected; }
-        int publish(const std::string& topic, const std::string& message, bool retain = false);
+        bool publish(const std::string& topic, const std::string& message, bool retain = false);
         void setWill(const std::string& topic);
         bool verifyConnection();
         bool waitForConnection() const;

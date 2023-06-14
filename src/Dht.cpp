@@ -1,6 +1,5 @@
 #include <pigpio.h>
 #include <cstdio> 
-#include <cstring>
 #include <cmath>
 #include "Dht.h"
 
@@ -28,7 +27,7 @@ Dht::~Dht() {
 bool Dht::begin() {
     _config->setIfExists("dataPin", &_dataPin);
     _config->setIfExists("powerPin", &_powerPin);
-    int cfg = gpioCfgGetInternals();
+    auto cfg = gpioCfgGetInternals();
     cfg |= PI_CFG_NOSIGHANDLER;  
     gpioCfgSetInternals(cfg);
     if (gpioInitialise() < 0) {
@@ -74,7 +73,7 @@ void Dht::reportResult(const bool success) {
     }
 }
 
-void Dht::shutdown() {
+void Dht::shutdown() const {
     printf("%u: Shutting down DHT\n", gpioTick());
     gpioWrite(_powerPin, PI_LOW);
     gpioTerminate();
@@ -90,12 +89,12 @@ void Dht::reset() {
 }
 
 bool Dht::waitForNextMeasurement(bool& keepGoing) {
-    uint32_t currentTime = gpioTick();
+	const uint32_t currentTime = gpioTick();
     if (currentTime == static_cast<uint32_t>(PI_NOT_INITIALISED)) return false;
     printf("Waiting\n");
     int32_t waitTime;
-    for (; waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()), waitTime > 0 && keepGoing;) {
-        auto timeToSleep = std::min(waitTime, 100000);
+    while (waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()), waitTime > 0 && keepGoing) {
+	    const auto timeToSleep = std::min(waitTime, 100000);
         gpioDelay(timeToSleep);
     }
     printf("Waited %u us for next measurement\n", gpioTick() - currentTime);
@@ -126,7 +125,7 @@ bool Dht::read() {
     _nextScheduledRead += MIN_INTERVAL_MICROS;
     printf("Reading.. (last=%u, next=%u, diff=%d)\n", _lastReadTime, _nextScheduledRead, static_cast<int32_t>(_nextScheduledRead - _lastReadTime));
 
-    // Send start signal.  See DHT datasheet for full signal diagram:
+    // Send start signal.  See DHT data sheet for full signal diagram:
     //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf
 
     // Pull up the data line and wait a millisecond.
@@ -177,7 +176,7 @@ bool Dht::read() {
     return _conversionOk;
 }
 
-void Dht::log(const std::string& message, bool trace) {
+void Dht::log(const std::string& message, bool trace) const {
     if (!trace || (trace & _trace)) {
         printf("%u: %s\n", gpioTick(), message.c_str());
     }

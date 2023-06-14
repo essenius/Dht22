@@ -18,6 +18,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror -O0 -g)
 
+message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
+
+if (WIN32) 
+  message(STATUS "Windows build")
+  set(CMAKE_PREFIX_PATH $ENV{LOCALAPPDATA}/mosquitto ${CMAKE_MODULE_PATH}/devel $ENV{ONEDRIVE}/src/repos/pigpio-mock/out/build/x64-Debug)
+  #set(CMAKE_INCLUDE_PATH $ENV{LOCALAPPDATA}/mosquitto/devel ${CMAKE_INCLUDE_PATH})
+endif()
+#message(STATUS "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/lib;${PROJECT_BINARY_DIR}/lib/cmake")
 
 #if (TOP_LEVEL) 

@@ -51,7 +51,7 @@ void ClimateMeasurement::processSample(float temperature, float humidity) {
 }
 
 /// @brief Calculate the average of the last 5 measurements
-/// We use an average over 5 samples for humidity and temperature to smoothen out the noise.
+/// We use an average over 5 samples for humidity and temperature to smoothen the noise.
 /// Also the highest and lowest values are discarded to eliminate outliers.
 /// Finally, sometimes the sensor returns "NaN". If that is the case, ignore those samples if possible.
 float ClimateMeasurement::average(float input[], const int sampleSize) {
@@ -85,7 +85,8 @@ float ClimateMeasurement::average(float input[], const int sampleSize) {
         }
     }
     totalValue -= (minValue + maxValue);
-    return totalValue / (sampleSize - nanCount - 2);
+    // Not seeing the issue here. Even static_cast to float doesn't help to remove the finding on sampleSize
+    return totalValue / static_cast<float>(sampleSize - nanCount - 2);  // NOLINT(clang-diagnostic-implicit-int-float-conversion) 
 }
 
 /// @brief Calculate the average of the measurements and round it to 1 decimal

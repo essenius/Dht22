@@ -1,5 +1,4 @@
 #include "Homie.h"
-#include <cstring>
 #include <iostream>
 
 Homie::Homie(Queuing::Mqtt *mqtt, Config* config): _mqtt(mqtt), _config(config) {}
@@ -22,26 +21,25 @@ bool Homie::begin() {
     return _mqtt->begin();
 }
 
-std::string Homie::toString(float f) {
+std::string Homie::toString(const float f) {
     char buffer[20];
     (void)snprintf(buffer, sizeof(buffer), "%.1f", f);
     return { buffer };
 }
 
-bool Homie::sendTemperature(float value) {
+bool Homie::sendTemperature(const float value) {
 	const std::string topic = _nodePrefix + TEMPERATURE;
     return sendMessage(topic, toString(value), false);
 }
 
-bool Homie::sendHumidity(float value) {
+bool Homie::sendHumidity(const float value) {
 	const std::string topic = _nodePrefix + HUMIDITY;
     return sendMessage(topic, toString(value), false);
 }
 
-bool Homie::sendMessage(const std::string& topic, const std::string& message, bool retain) {
-    int returnValue = _mqtt->publish(topic, message, retain);
-    std::cout << "MQTT publish t=" << topic << " m=" << message << " r=" << retain << " rv=" << returnValue << "_c=" << _isConnected << std::endl;
-    bool isConnected = returnValue == MOSQ_ERR_SUCCESS;
+bool Homie::sendMessage(const std::string& topic, const std::string& message, const bool retain) {
+    const bool isConnected = _mqtt->publish(topic, message, retain);
+    std::cout << "MQTT publish t=" << topic << " m=" << message << " r=" << retain << " conn=" << isConnected << "_c=" << _isConnected << std::endl;
     if (isConnected != _isConnected) {
         _isConnected = isConnected;
         std::cout << "MQTT connected=" << _isConnected << std::endl;

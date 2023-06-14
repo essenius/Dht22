@@ -101,16 +101,17 @@ namespace Queuing {
         mosquitto_lib_cleanup();
     }
 
-    int Mqtt::publish(const std::string& topic, const std::string& message, bool retain) {
+    bool Mqtt::publish(const std::string& topic, const std::string& message, bool retain) {
         if (!verifyConnection()) return false;
         int messageId;
-        int returnCode = mosquitto_publish(_mosquitto, &messageId, topic.c_str(), 
+        _errorCode = mosquitto_publish(_mosquitto, &messageId, topic.c_str(), 
                             static_cast<int>(message.length()), message.c_str(), 0, retain);
 
-        if (returnCode != MOSQ_ERR_SUCCESS) {
+        if (_errorCode != MOSQ_ERR_SUCCESS) {
             std::cerr << "Publish failed, error: " << returnCode << "/" << mosquitto_strerror(returnCode) << "\n";
+            return false;
         }
-        return returnCode;
+        return true;
     }
 
     void Mqtt::setWill(const std::string &topic) {

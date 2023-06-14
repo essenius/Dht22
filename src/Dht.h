@@ -13,7 +13,7 @@ public:
     float readHumidity();
     float readTemperature();
     void reset();
-    void shutdown();
+    void shutdown() const;
     bool waitForNextMeasurement(bool& keepGoing);
     void trace() { _trace = true; }
 
@@ -32,7 +32,7 @@ private:
     unsigned int _consecutiveFailures = 0;
 
     bool read();
-    void log(const std::string& message, bool trace = false);
+    void log(const std::string& message, bool trace = false) const;
     void reportResult(bool success);
 };
 

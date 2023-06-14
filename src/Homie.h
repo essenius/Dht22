@@ -5,10 +5,14 @@
 #include "Mqtt.h"
 #include "ISender.h"
 
-class Homie : public ISender {
+class Homie final : public ISender {
 public:
     Homie(Queuing::Mqtt* mqtt, Config* config);
-    virtual ~Homie();
+    ~Homie() override;
+    Homie(const Homie&) = delete;
+    Homie(Homie&&) = delete;
+    Homie& operator=(const Homie&) = delete;
+    ISender& operator=(Homie&&) = delete;
     bool begin();
     bool sendHumidity(float value) override;
     bool sendMetadata();

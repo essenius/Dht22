@@ -7,7 +7,8 @@ if (NOT MOSQUITTO_INCLUDE_DIR)
 endif()
 
 if (NOT MOSQUITTO_LIB)
-    find_library(MOSQUITTO_LIB mosquitto)
+    message(STATUS "Searching. CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
+    find_library(MOSQUITTO_LIB mosquitto REQUIRED)
 endif()
 
 if (NOT PIGPIO_INCLUDE_DIR)
