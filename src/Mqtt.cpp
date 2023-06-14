@@ -37,7 +37,7 @@ namespace Queuing {
         std::cout << "## - Message published successfully: " << messageId << std::endl;
     }
 
-    void onLog(struct mosquitto *mosq, void *userdata, int level, const char *str) {
+    void onLog(struct mosquitto *mosq, void *userdata, const int level, const char *str) {
         (void)mosq;
         (void)userdata;
         std::cout << "## - Log: " << level << ": " << str << std::endl;
@@ -81,7 +81,7 @@ namespace Queuing {
         }
 
         printf("Connecting to %s:%d, with keepalive %d\n", _broker, _port, _keepAliveSeconds);
-        if (int rc = mosquitto_connect(_mosquitto, _broker, _port, _keepAliveSeconds); rc != MOSQ_ERR_SUCCESS) {
+        if (const int rc = mosquitto_connect(_mosquitto, _broker, _port, _keepAliveSeconds); rc != MOSQ_ERR_SUCCESS) {
             _errorCode = rc;
             std::cerr << "Connect failed, error: " << rc << "/" << mosquitto_strerror(rc) << "\n";
             return false;
@@ -108,15 +108,15 @@ namespace Queuing {
                             static_cast<int>(message.length()), message.c_str(), 0, retain);
 
         if (_errorCode != MOSQ_ERR_SUCCESS) {
-            std::cerr << "Publish failed, error: " << returnCode << "/" << mosquitto_strerror(returnCode) << "\n";
+            std::cerr << "Publish failed, error: " << _errorCode << "/" << mosquitto_strerror(_errorCode) << "\n";
             return false;
         }
         return true;
     }
 
-    void Mqtt::setWill(const std::string &topic) {
+    void Mqtt::setWill(const std::string &topic) const {
         constexpr const char* LOST = "lost";
-        mosquitto_will_set(_mosquitto, topic.c_str(), strlen(LOST), LOST, 0, false);
+        mosquitto_will_set(_mosquitto, topic.c_str(), static_cast<int>(strlen(LOST)), LOST, 0, false);
     }
 
     bool Mqtt::verifyConnection() {

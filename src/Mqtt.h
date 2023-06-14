@@ -6,8 +6,8 @@
 
 namespace Queuing {
     void onConnect(mosquitto* mosq, void* obj, int rc);
-    void onDisconnect(mosquitto* mosq, void* obj, int rc);
-    void onPublish(mosquitto* mosq, void* obj, int mid);
+    void onDisconnect(mosquitto* mosq, void* obj, int returnCode);
+    void onPublish(mosquitto* mosq, void* obj, int messageId);
     void onLog(mosquitto* mosq, void* obj, int level, const char* str);
 
     class Mqtt {
@@ -18,12 +18,12 @@ namespace Queuing {
         int errorCode() const { return _errorCode; }
         bool isConnected() const { return _isConnected; }
         bool publish(const std::string& topic, const std::string& message, bool retain = false);
-        void setWill(const std::string& topic);
+        void setWill(const std::string& topic) const;
         bool verifyConnection();
         bool waitForConnection() const;
         friend void onConnect(mosquitto* mosq, void* obj, int rc);
-        friend void onDisconnect(mosquitto* mosq, void* obj, int rc);
-        friend void onPublish(mosquitto* mosq, void* obj, int mid);
+        friend void onDisconnect(mosquitto* mosq, void* obj, int returnCode);
+        friend void onPublish(mosquitto* mosq, void* obj, int messageId);
         friend void onLog(mosquitto* mosq, void* obj, int level, const char* str);
 
 
