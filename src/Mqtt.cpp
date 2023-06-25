@@ -1,7 +1,15 @@
+// Copyright 2023 Rik Essenius
+// 
+//   Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+//   except in compliance with the License. You may obtain a copy of the License at
+// 
+//       http://www.apache.org/licenses/LICENSE-2.0
+// 
+//   Unless required by applicable law or agreed to in writing, software distributed under the License
+//   is distributed on an "AS IS" BASIS WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and limitations under the License.
+
 #include <cstring>
-#include <stdexcept>
-#include <cmath>
-#include <fstream>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -9,10 +17,10 @@
 #include "Mqtt.h"
 #include <mosquitto.h>
 
-namespace Queuing {
-    void onConnect(struct mosquitto *mosq, void *userdata, int returnCode) {
-        (void)mosq;
-        auto mqtt = static_cast<Mqtt*>(userdata);
+namespace queuing {
+    void onConnect(mosquitto *mosquittoInstance, void *userdata, int returnCode) {
+        (void)mosquittoInstance;
+        const auto mqtt = static_cast<Mqtt*>(userdata);
         mqtt->setErrorCode(returnCode);
         mqtt->setConnected(returnCode == MOSQ_ERR_SUCCESS);
         if (mqtt->isConnected()) {
@@ -23,28 +31,28 @@ namespace Queuing {
         }
     }
 
-    void onDisconnect(struct mosquitto *mosq, void *userdata, int returnCode) {
-        (void)mosq;
-        auto mqtt = static_cast<Mqtt*>(userdata);
+    void onDisconnect(mosquitto *mosquittoInstance, void *userdata, int returnCode) {
+        (void)mosquittoInstance;
+        const auto mqtt = static_cast<Mqtt*>(userdata);
         mqtt->setErrorCode(returnCode);
         mqtt->setConnected(false);
         std::cout << "## Disconnected" << std::endl;
     }
 
-    void onPublish(struct mosquitto *mosq, void *userdata, int messageId) {
-        (void)mosq;
+    void onPublish(mosquitto *mosquittoInstance, void *userdata, int messageId) {
+        (void)mosquittoInstance;
         (void)userdata;
         std::cout << "## - Message published successfully: " << messageId << std::endl;
     }
 
-    void onLog(struct mosquitto *mosq, void *userdata, const int level, const char *str) {
-        (void)mosq;
+    void onLog(struct mosquitto *mosquittoInstance, void *userdata, const int level, const char *str) {
+        (void)mosquittoInstance;
         (void)userdata;
         std::cout << "## - Log: " << level << ": " << str << std::endl;
     }
 
-    Mqtt::Mqtt(const Config* config, bool* keepGoing) : _config(config), _keepGoing(keepGoing) {
-        auto id = config->getEntry("device");
+    Mqtt::Mqtt(const Config* config, volatile bool* keepGoing) : _config(config), _keepGoing(keepGoing) {
+	    const auto id = config->getEntry("device");
         mosquitto_lib_init();
         _mosquitto = mosquitto_new(id.c_str(), true, this);
         mosquitto_connect_callback_set(_mosquitto, &onConnect);
@@ -80,7 +88,7 @@ namespace Queuing {
             }
         }
 
-        printf("Connecting to %s:%d, with keepalive %d\n", _broker, _port, _keepAliveSeconds);
+        printf("Connecting to %s:%d, with keep-alive %d\n", _broker, _port, _keepAliveSeconds);
         if (const int rc = mosquitto_connect(_mosquitto, _broker, _port, _keepAliveSeconds); rc != MOSQ_ERR_SUCCESS) {
             _errorCode = rc;
             std::cerr << "Connect failed, error: " << rc << "/" << mosquitto_strerror(rc) << "\n";
@@ -119,7 +127,7 @@ namespace Queuing {
         mosquitto_will_set(_mosquitto, topic.c_str(), static_cast<int>(strlen(LOST)), LOST, 0, false);
     }
 
-    bool Mqtt::verifyConnection() {
+    bool Mqtt::verifyConnection() const {
         if (_isConnected) return true;
         printf("Connection lost. Reconnecting\n");
         mosquitto_reconnect(_mosquitto);

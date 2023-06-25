@@ -1,3 +1,14 @@
+# Copyright 2023 Rik Essenius
+# 
+#   Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of the License at
+# 
+#       http://www.apache.org/licenses/LICENSE-2.0
+# 
+#   Unless required by applicable law or agreed to in writing, software distributed under the License
+#   is distributed on an "AS IS" BASIS WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and limitations under the License.
+
 cmake_minimum_required(VERSION 3.14)
 
 set(dhtName Dht)
@@ -16,13 +27,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_compile_options(-Wall -Wextra -Wpedantic -Werror -O0 -g)
+if(CMAKE_COMPILER_IS_GNUCXX)
+	add_compile_options(-Wall -Wextra -Wpedantic -Werror -O0 -g)
+endif()
 
 message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 
-if (WIN32) 
+if (WIN32)	
+  # this does not work right yet. For some reason the linker cannot find the pigpio-mock library
   message(STATUS "Windows build")
-  set(CMAKE_PREFIX_PATH $ENV{LOCALAPPDATA}/mosquitto ${CMAKE_MODULE_PATH}/devel $ENV{ONEDRIVE}/src/repos/pigpio-mock/out/build/x64-Debug)
+  set(CMAKE_PREFIX_PATH $ENV{LOCALAPPDATA}/mosquitto $ENV{LOCALAPPDATA}/mosquitto/devel $ENV{LOCALAPPDATA}/repos/pigpio-mock; $ENV{LOCALAPPDATA}/repos/pigpio-mock/out/build/x64-Debug)
+  message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
   #set(CMAKE_INCLUDE_PATH $ENV{LOCALAPPDATA}/mosquitto/devel ${CMAKE_INCLUDE_PATH})
 endif()
 #message(STATUS "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")

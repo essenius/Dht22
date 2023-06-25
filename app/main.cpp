@@ -1,3 +1,4 @@
+
 #include "OS.h"
 #include "ClimateMeasurement.h"
 #include "Config.h"
@@ -7,7 +8,7 @@
 #include <cstdio>
 #include <csignal>
 
-bool keepGoing = true;
+volatile bool keepGoing = true;
 int signalCount = 0;
 
 void signalHandler(sig_atomic_t s) {
@@ -28,7 +29,7 @@ int mainHelper(const char* configFile = "/home/pi/.config/dht.conf") {
    printf("Config began, device=%s\n", config.getEntry("device", "unknown").c_str());
    SensorData sensorData;
    printf("SensorData defined\n");
-   Queuing::Mqtt mqtt(&config, &keepGoing);
+   queuing::Mqtt mqtt(&config, &keepGoing);
    printf("MQTT defined\n");
    Homie homie(&mqtt, &config);
    Dht dht(&sensorData, &config);
