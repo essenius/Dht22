@@ -162,14 +162,14 @@ bool Dht::read() {
     // time out if we don't get a change on time
     gpioSetWatchdog(_dataPin, READ_TIMEOUT_MILLIS); 
 
-    uint32_t waitTime = gpioTick();
+    // uint32_t waitTime = gpioTick();
     // wait for the callback to complete reading.
     gpioDelay(MINIMUM_READ_TIME_MICROS);
     while (_sensorData->isReading()) {
         log("Waiting for data", true);
         gpioDelay(WAIT_INTERVAL_MICROS);
     } 
-    waitTime = gpioTick() - waitTime;
+    // waitTime = gpioTick() - waitTime;
 
     // stop the watch dog and the callback
     log("Stopping watchdog", true);
@@ -182,8 +182,7 @@ bool Dht::read() {
     _humidity = _sensorData->getHumidity();
     log("getting temperature", true);
     _temperature = _sensorData->getTemperature();
-    const auto anomalies = _sensorData->getAnomalyCount();
-    if (anomalies > 0) {
+    if (const auto anomalies = _sensorData->getAnomalyCount(); anomalies > 0) {
         printf("Found %d anomalies\n", anomalies);
     }
     _conversionOk = _sensorData->isDone();
