@@ -31,7 +31,7 @@ constexpr int MAX_CONSECUTIVE_FAILURES = 10;
 Dht::Dht(SensorData* sensorData, Config* config) :  _sensorData(sensorData), _config(config) {}
 
 Dht::~Dht() {
-    printf("Dht destructor\n");
+    log("Dht destructor", true);
     shutdown();
 }
 
@@ -42,7 +42,7 @@ bool Dht::begin() {
     cfg |= PI_CFG_NOSIGHANDLER;  
     gpioCfgSetInternals(cfg);
     if (gpioInitialise() < 0) {
-        printf("could not initialize GPIO. Terminating and re-initializing...\n");
+        log("could not initialize GPIO. Terminating and re-initializing...", false);
         gpioTerminate();
         if (gpioInitialise() < 0) return false;
     }
@@ -77,15 +77,15 @@ void Dht::reportResult(const bool success) {
         return;
     }
     _consecutiveFailures++;
-    printf("Failed to get sensor value\n");
+    log("Failed to get sensor value", false);
     if (_consecutiveFailures > MAX_CONSECUTIVE_FAILURES) {
-        printf("Too many consecutive failures. Resetting sensor.\n");
+        log("Too many consecutive failures. Resetting sensor.", false);
         reset();
     }
 }
 
 void Dht::shutdown() const {
-    printf("%u: Shutting down DHT\n", gpioTick());
+    log("Shutting down DHT", false);
     gpioWrite(_powerPin, PI_LOW);
     gpioTerminate();
 }
@@ -102,13 +102,13 @@ void Dht::reset() {
 bool Dht::waitForNextMeasurement(volatile bool& keepGoing) {
 	const uint32_t currentTime = gpioTick();
     if (currentTime == static_cast<uint32_t>(PI_NOT_INITIALISED)) return false;
-    printf("Waiting\n");
+    log("Waiting", true);
     int32_t waitTime;
     while (waitTime = static_cast<int32_t>(_nextScheduledRead - gpioTick()), waitTime > 0 && keepGoing) {
-	    const auto timeToSleep = std::min(waitTime, 100000);
+        const auto timeToSleep = std::min(waitTime, 100000);
         gpioDelay(timeToSleep);
     }
-    printf("Waited %u us for next measurement\n", gpioTick() - currentTime);
+    // printf("Waited %u us for next measurement\n", gpioTick() - currentTime);
     if (waitTime < -10000) {
         // if we're off more than 10 milliseconds, recalibrate. This could happen after connection issues
         printf("Recalibrating. Next scheduled read was %u us ago. New is %u plus time for this print command\n", -waitTime, gpioTick());
@@ -125,16 +125,16 @@ void pinCallback([[maybe_unused]] int gpio, int level, uint32_t tick, void *user
 /// @brief Read the sensor and store the result in the class variables. Expects the sensor to be powered up (does not wait).
 /// @return whether a valid result is available. A cached result of less than two seconds old is considered valid.
 bool Dht::read() {
-    printf("Reading\n");
+    // printf("Reading\n");
     const uint32_t currentTime = gpioTick();
     if ((static_cast<int32_t>(currentTime - _lastReadTime) < static_cast<int32_t>(MIN_INTERVAL_MICROS)) && (static_cast<int32_t>(currentTime - _nextScheduledRead) < 0)) {
-        printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
+        // printf("Using cache: current=%u last=%u, next=%u, result=%d\n", currentTime, _lastReadTime, _nextScheduledRead, _conversionOk);
         return _conversionOk; 
     }
 
     _lastReadTime = currentTime;
     _nextScheduledRead += MIN_INTERVAL_MICROS;
-    printf("Reading.. (last=%u, next=%u, diff=%d)\n", _lastReadTime, _nextScheduledRead, static_cast<int32_t>(_nextScheduledRead - _lastReadTime));
+    // printf("Reading.. (last=%u, next=%u, diff=%d)\n", _lastReadTime, _nextScheduledRead, static_cast<int32_t>(_nextScheduledRead - _lastReadTime));
 
     // Send start signal.  See DHT data sheet for full signal diagram:
     //   http://www.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf
@@ -176,12 +176,16 @@ bool Dht::read() {
     gpioSetWatchdog(_dataPin, 0);
     log("Stopping callback", true);
     gpioSetAlertFuncEx(_dataPin, nullptr, nullptr);
-    printf("Waited %u ns for data\n", waitTime);
+    // printf("Waited %u ns for data\n", waitTime);
 
     log("getting humidity", true);
     _humidity = _sensorData->getHumidity();
     log("getting temperature", true);
     _temperature = _sensorData->getTemperature();
+    const auto anomalies = _sensorData->getAnomalyCount();
+    if (anomalies > 0) {
+        printf("Found %d anomalies\n", anomalies);
+    }
     _conversionOk = _sensorData->isDone();
     reportResult(_conversionOk);
     return _conversionOk;

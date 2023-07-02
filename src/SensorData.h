@@ -36,15 +36,16 @@ public:
     [[nodiscard]] float getTemperature() const;
     [[nodiscard]] uint16_t getWordAtIndex(const uint8_t index) const;
     void initRead(uint32_t timestamp);
-
+    int getAnomalyCount() { return _anomaly; }
 private:
     int _currentIndex = 0;
     std::array<uint8_t, BYTES> _data = {};
     int _overrunCount = 0;
+    unsigned int _anomaly = 0;
     uint32_t _previousTime = 0;
     uint32_t _referenceDuration = 0;
     uint16_t _lastGoodHumidity = 0;
-    unsigned char _lastGoodTemperature = 0;
+    // unsigned char _lastGoodTemperature = 0;
     SensorState _state = SensorState::Timeout; // any state not Done or Reading
 };
 

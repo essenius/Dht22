@@ -18,8 +18,8 @@
 namespace queuing {
     void onConnect(mosquitto* mosquittoInstance, void* userdata, int returnCode);
     void onDisconnect(mosquitto* mosquittoInstance, void* userdata, int returnCode);
-    void onPublish(mosquitto* mosquittoInstance, void* userdata, int messageId);
-    void onLog(mosquitto* mosquittoInstance, void* userdata, int level, const char* str);
+    // void onPublish(mosquitto* mosquittoInstance, void* userdata, int messageId);
+    // void onLog(mosquitto* mosquittoInstance, void* userdata, int level, const char* str);
 
     class Mqtt {
     public:
@@ -34,8 +34,8 @@ namespace queuing {
         bool waitForConnection() const;
         friend void onConnect(mosquitto* mosquittoInstance, void* userdata, int returnCode);
         friend void onDisconnect(mosquitto* mosquittoInstance, void* userdata, int returnCode);
-        friend void onPublish(mosquitto* mosquittoInstance, void* userdata, int messageId);
-        friend void onLog(mosquitto* mosquittoInstance, void* userdata, int level, const char* str);
+        // friend void onPublish(mosquitto* mosquittoInstance, void* userdata, int messageId);
+        // friend void onLog(mosquitto* mosquittoInstance, void* userdata, int level, const char* str);
 
 
     private:

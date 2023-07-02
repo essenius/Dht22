@@ -39,7 +39,7 @@ namespace queuing {
         std::cout << "## Disconnected" << std::endl;
     }
 
-    void onPublish(mosquitto *mosquittoInstance, void *userdata, int messageId) {
+/*    void onPublish(mosquitto *mosquittoInstance, void *userdata, int messageId) {
         (void)mosquittoInstance;
         (void)userdata;
         std::cout << "## - Message published successfully: " << messageId << std::endl;
@@ -49,7 +49,7 @@ namespace queuing {
         (void)mosquittoInstance;
         (void)userdata;
         std::cout << "## - Log: " << level << ": " << str << std::endl;
-    }
+    } */
 
     Mqtt::Mqtt(const Config* config, volatile bool* keepGoing) : _config(config), _keepGoing(keepGoing) {
 	    const auto id = config->getEntry("device");
@@ -57,8 +57,8 @@ namespace queuing {
         _mosquitto = mosquitto_new(id.c_str(), true, this);
         mosquitto_connect_callback_set(_mosquitto, &onConnect);
         mosquitto_disconnect_callback_set(_mosquitto, &onDisconnect);
-        mosquitto_publish_callback_set(_mosquitto, &onPublish);
-        mosquitto_log_callback_set(_mosquitto, &onLog);  
+        // mosquitto_publish_callback_set(_mosquitto, &onPublish);
+        // mosquitto_log_callback_set(_mosquitto, &onLog);  
     }
 
     bool Mqtt::begin() {
