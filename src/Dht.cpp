@@ -188,7 +188,7 @@ bool Dht::read() {
 }
 
 void Dht::log(const std::string& message, bool trace) const {
-    if (!trace || (trace & _trace)) {
+    if (!trace || (trace && _trace)) {
         printf("%u: %s\n", gpioTick(), message.c_str());
     }
 }

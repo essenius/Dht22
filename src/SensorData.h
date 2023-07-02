@@ -9,8 +9,8 @@
 //   is distributed on an "AS IS" BASIS WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //   See the License for the specific language governing permissions and limitations under the License.
 
-#ifndef SENSORDATA_H
-#define SENSORDATA_H
+#ifndef SENSOR_DATA_H
+#define SENSOR_DATA_H
 
 #include <cstdint>
 #include <array>
@@ -43,6 +43,8 @@ private:
     int _overrunCount = 0;
     uint32_t _previousTime = 0;
     uint32_t _referenceDuration = 0;
+    uint16_t _lastGoodHumidity = 0;
+    unsigned char _lastGoodTemperature = 0;
     SensorState _state = SensorState::Timeout; // any state not Done or Reading
 };
 

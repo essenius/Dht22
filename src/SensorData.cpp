@@ -25,20 +25,21 @@ void SensorData::addEdge(const int levelIn, const uint32_t timestamp) {
         _overrunCount++;
         return;
     }
-
     const uint32_t duration = timestamp - _previousTime;
-
     switch (levelIn) {
         // move from 1 to 0, so we just had a data bit
         case 0:
             {
+				// we should only get this after the reference bit
+				if (_referenceDuration == 0) return;
 	            const auto dataIndex = (_currentIndex - START_EDGE) / 16;
                 // shift left by 1
                 _data[dataIndex] *= 2;
                 if (duration > _referenceDuration) {
                     _data[dataIndex] += 1;
                 }
-            }
+                _referenceDuration = 0;
+			}
             break;
         // move from 0 to 1, so we just had a reference bit
         case 1:
@@ -87,6 +88,7 @@ uint16_t SensorData::getWordAtIndex(const uint8_t index) const {
 
 void SensorData::initRead(const uint32_t timestamp) {
     _previousTime = timestamp;
+    _referenceDuration = 0;
     _currentIndex = 0;
     _state = SensorState::Reading;
     for(int i = 0; i < BYTES; i++) {

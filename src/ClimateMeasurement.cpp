@@ -84,6 +84,10 @@ float ClimateMeasurement::average(float input[], const int sampleSize) {
             if (input[i] > maxValue) maxValue = input[i];
         }
     }
+    if ((maxValue - minValue > 5.0f) || (minValue / maxValue < 0.8f)) {
+		std::cout << "outliers: " << minValue << ", " << maxValue << std::endl;
+    }
+
     totalValue -= (minValue + maxValue);
     // Not seeing the issue here. Even static_cast to float doesn't help to remove the finding on sampleSize
     return totalValue / static_cast<float>(sampleSize - nanCount - 2);  // NOLINT(clang-diagnostic-implicit-int-float-conversion) 

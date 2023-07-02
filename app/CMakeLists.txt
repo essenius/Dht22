@@ -13,9 +13,15 @@ include(tools)
 
 assertVariableSet(dhtExe dhtName)
 
-find_library(pigpio pigpio)
+if (NOT PIGPIO_INCLUDE_DIR)
+    find_path(PIGPIO_INCLUDE_DIR pigpio.h)
+endif()
+
+if (NOT PIGPIO_LIB)
+    find_library(PIGPIO_LIB pigpio)   
+endif()
 
 add_executable(${dhtExe} "")
 
 target_sources (${dhtExe} PRIVATE main.cpp)
-target_link_libraries(${dhtExe} ${dhtName} pigpio)
+target_link_libraries(${dhtExe} ${dhtName} ${PIGPIO_LIB})

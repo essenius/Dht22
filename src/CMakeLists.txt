@@ -37,8 +37,13 @@ message(STATUS "PIGPIO_LIB=${PIGPIO_LIB}")
 
 add_library(${dhtName} "")
 
+if (WIN32)
+  target_link_libraries(${dhtName} wsock32 ws2_32)
+endif()
+
 set(myHeaders ClimateMeasurement.h Config.h Dht.h Homie.h ISender.h Mqtt.h OS.h SensorData.h)
 set(mySources ClimateMeasurement.cpp Config.cpp Dht.cpp Homie.cpp Mqtt.cpp OS.cpp SensorData.cpp)
 target_sources (${dhtName} PUBLIC ${myHeaders} PRIVATE ${mySources})
 target_include_directories(${dhtName} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${MOSQUITTO_INCLUDE_DIR} ${PIGPIO_INCLUDE_DIR})
 target_link_libraries(${dhtName} ${PIGPIO_LIB} ${MOSQUITTO_LIB})
+
