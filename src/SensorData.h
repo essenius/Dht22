@@ -45,7 +45,6 @@ private:
     uint32_t _previousTime = 0;
     uint32_t _referenceDuration = 0;
     uint16_t _lastGoodHumidity = 0;
-    // unsigned char _lastGoodTemperature = 0;
     SensorState _state = SensorState::Timeout; // any state not Done or Reading
 };
 
