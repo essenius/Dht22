@@ -15,7 +15,7 @@
 
 class SensorDataTest : public ::testing::Test {
     public:
-    void SimulateDataStream(SensorData& sensorData, SensorState expectedState, bool isPositive) const {
+    void simulateDataStream(SensorData& sensorData, SensorState expectedState, bool isPositive) const {
         EXPECT_EQ(SensorState::Timeout, sensorData.getState()) << "Initial state is Timeout";
         uint32_t timestamp = 0;
         sensorData.initRead(timestamp);
@@ -72,7 +72,7 @@ TEST_F(SensorDataTest, addEdgeHappyPathAllZero) {
 
 TEST_F(SensorDataTest, CorrectDataPositiveTemperature) {
     SensorData sensorData;
-    SimulateDataStream(sensorData, SensorState::Done, true);
+    simulateDataStream(sensorData, SensorState::Done, true);
     EXPECT_TRUE(sensorData.isDone()) << "is Done";
     EXPECT_EQ(0x5555, sensorData.getWordAtIndex(0)) << "Word @ 0";
     EXPECT_EQ(0x5555, sensorData.getWordAtIndex(2)) << "Word @ 2";
@@ -84,7 +84,7 @@ TEST_F(SensorDataTest, CorrectDataPositiveTemperature) {
 
 TEST_F(SensorDataTest, CorrectDataNegativeTemperature) {
     SensorData sensorData;
-    SimulateDataStream(sensorData, SensorState::Done, false);
+    simulateDataStream(sensorData, SensorState::Done, false);
     EXPECT_TRUE(sensorData.isDone()) << "is Done";
     EXPECT_EQ(0xAAAA, sensorData.getWordAtIndex(0)) << "Word @ 0";
     EXPECT_EQ(0xAAAA, sensorData.getWordAtIndex(2)) << "Word @ 2";
@@ -96,7 +96,7 @@ TEST_F(SensorDataTest, CorrectDataNegativeTemperature) {
 
 TEST_F(SensorDataTest, IncorrectData) {
     SensorData sensorData;
-    SimulateDataStream(sensorData, SensorState::ReadError, true);
+    simulateDataStream(sensorData, SensorState::ReadError, true);
     EXPECT_EQ(0xFFFF, sensorData.getWordAtIndex(0)) << "Word @ 0";
     EXPECT_EQ(0xFFFF, sensorData.getWordAtIndex(2)) << "Word @ 2";
 
@@ -108,7 +108,7 @@ TEST_F(SensorDataTest, IncorrectData) {
 
 TEST_F(SensorDataTest, Timeout) {
     SensorData sensorData;
-    SimulateDataStream(sensorData, SensorState::Timeout, true);
+    simulateDataStream(sensorData, SensorState::Timeout, true);
     EXPECT_EQ(SensorState::Timeout, sensorData.getState()) << "State is Timeout";
     EXPECT_TRUE(std::isnan(sensorData.getTemperature())) << "Temperature is NaN";
     EXPECT_TRUE(std::isnan(sensorData.getHumidity())) << "Temperature is NaN";

@@ -44,23 +44,23 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/lib;${PROJECT_BINARY_DIR}/lib/cmake")
 
-#if (TOP_LEVEL) 
-#  message(STATUS "Top level project - enabling code coverage")
-#  add_subdirectory(lib)
+if (TOP_LEVEL) 
+  message(STATUS "Top level project - enabling code coverage")
+  add_subdirectory(lib)
 #  set(CODE_COVERAGE ON)
 #  include(code-coverage)
 #  add_code_coverage()
-#endif()
+endif()
 
 add_subdirectory(src)
 
 add_subdirectory(app)
 
-#if(TOP_LEVEL)
-#  message(STATUS "Top level project - enabling tests")
-#  enable_testing()
-#  add_subdirectory(test)
+if(TOP_LEVEL)
+  message(STATUS "Top level project - enabling tests")
+  enable_testing()
+  add_subdirectory(test)
 #  # target_code_coverage(${dhtTestName} EXCLUDE build/_deps/googletest-src/* test/*) 
-#endif()
+endif()
 
 # to generate coverage report run 'make ccov-DhtTest' and view build/ccov/DhtTest/index.html
