@@ -36,11 +36,10 @@ message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 if (WIN32)	
   # this does not work right yet. For some reason the linker cannot find the pigpio-mock library
   message(STATUS "Windows build")
-  set(CMAKE_PREFIX_PATH $ENV{LOCALAPPDATA}/mosquitto $ENV{LOCALAPPDATA}/mosquitto/devel $ENV{LOCALAPPDATA}/repos/pigpio-mock; $ENV{LOCALAPPDATA}/repos/pigpio-mock/out/build/x64-Debug)
+  set(CMAKE_PREFIX_PATH $ENV{MOSQUITTO_DIR} $ENV{MOSQUITTO_DIR}/devel $ENV{PIGPIO_DIR}; $ENV{PIGPIO_DIR}/build)
   message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
   #set(CMAKE_INCLUDE_PATH $ENV{LOCALAPPDATA}/mosquitto/devel ${CMAKE_INCLUDE_PATH})
 endif()
-#message(STATUS "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/lib;${PROJECT_BINARY_DIR}/lib/cmake")
 
@@ -63,4 +62,11 @@ if(TOP_LEVEL)
 #  # target_code_coverage(${dhtTestName} EXCLUDE build/_deps/googletest-src/* test/*) 
 endif()
 
+# For testing on on Windows, run: 
+#  mkdir build
+#  cd build
+#  cmake -G "MinGW Makefiles" ..
+#  mingw32-make.exe
+#  ctest --output-on-failure
+# Make sure Mosquitto and the pigpio-mock library are in the PATH
 # to generate coverage report run 'make ccov-DhtTest' and view build/ccov/DhtTest/index.html

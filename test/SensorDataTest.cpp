@@ -10,7 +10,7 @@
 //   See the License for the specific language governing permissions and limitations under the License.
 
 #include <gtest/gtest.h>
-
+#include <cmath>
 #include "SensorData.h"
 
 class SensorDataTest : public ::testing::Test {
@@ -60,7 +60,7 @@ TEST_F(SensorDataTest, addEdgeHappyPathAllZero) {
     SensorData sensorData;
     sensorData.initRead(0);
     int level = 0;
-    for (int i = 0; i < EDGES; i++) {
+    for (int i = 0; i <= EDGES; i++) {
         sensorData.addEdge(level, 100 * (i + 1));
         level = 1 - level;
     }

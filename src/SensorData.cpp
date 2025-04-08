@@ -11,14 +11,25 @@
 
 #include "SensorData.h"
 #include <cmath>
-#include <cstdio>
+#include <iostream>
 
-/// @brief Add an edge to the data. Called from callback, so needs to be fast.
-/// Compare the low and high cycle times to see if the bit is a 0 or 1. 
-/// Reference (low) duration is 50-55 us, High for 1 is 70-75us, high for 0 is 25-30us. 
-/// At the end, sets state to SensorState::Done if the checksum is correct, otherwise SensorState::Error
-/// @param levelIn the new level (0 or 1 for bit values, 2 for timeout)
-/// @param timestamp the timestamp where the edge was detected
+/// @brief Processes an edge signal from the DHT22 sensor. Called from the callback function, so it needs to be fast.
+/// The DHT22 sends 40 bits of data, which include:
+/// - 16 bits for humidity, stored as 10 times the value (i.e. 652 means 65.2 %).
+/// - 16 bits for temperature, stored as 10 times the value, and the most significant bit is the sign (so hex 8065 = negative 101 dec = -10.1 °C).
+/// - 8 bits for a checksum to verify data integrity.
+///
+/// Each bit is transmitted as:
+/// - A low signal for 50 microseconds (the reference duration), followed by:
+/// - A high signal for 26–28 microseconds (i.e. clearly less than the reference duration) to represent a "0".
+/// - A high signal for 70 microseconds (i.e. clearly more than the reference duration) to represent a "1".
+/// The data starts after 4 edges, so we have a total of 84 edges to process.
+/// 
+/// If all edges have been processed, it validates the checksum and sets the sensor state to Done or Error.
+// Check out https://cdn-shop.adafruit.com/datasheets/Digital%20humidity%20and%20temperature%20sensor%20AM2302.pdf for the details.
+///
+/// @param levelIn The new signal level (0 for low, 1 for high, 2 for timeout).
+/// @param timestamp The timestamp of the detected edge.
 void SensorData::addEdge(const int levelIn, const uint32_t timestamp) {
 
     if (!isReading()) {
@@ -58,6 +69,7 @@ void SensorData::addEdge(const int levelIn, const uint32_t timestamp) {
     _previousTime = timestamp;
     _currentIndex++;
 
+    //
     if(_currentIndex >= EDGES) {
         const auto checksum = (_data[0] + _data[1] + _data[2] + _data[3]) & 0xFF;
         _state = checksum == _data[4] ? SensorState::Done : SensorState::ReadError;

@@ -1,5 +1,4 @@
 {
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}/buildpi/compile_commands.json",
     "files.associations": {
         "cstdint": "cpp",
         "locale": "cpp",
@@ -76,4 +75,5 @@
         "csignal": "cpp",
         "thread": "cpp"
     },
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\compile_commands.json",
 }

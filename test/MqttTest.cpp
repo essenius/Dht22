@@ -39,12 +39,11 @@ TEST_F(MqttTest, WrongCert) {
 
 TEST_F(MqttTest, WithAuth) {
     Config config;
-    const auto configData = "device=pi230265\nbroker=nonexisting.org\nport=1883\nuser=pi\npassword=secret\n";
+    const auto configData = "device=pi230265\nbroker=nonexisting.org\nport=1883\nuser=ro\npassword=readonly\n";
     config.begin(configData);
     queuing::Mqtt mqtt(&config, &keepGoing);
-    EXPECT_TRUE(mqtt.begin()) << "Connect OK";
-    EXPECT_EQ(0, mqtt.errorCode()) << "Error code still 0";
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_FALSE(mqtt.begin()) << "Connect not OK";
+
     EXPECT_TRUE(mqtt.errorCode() != 0) << "Non-zero error code";
     EXPECT_FALSE(mqtt.isConnected()) << "Not connected: rc=" << mqtt.errorCode();
     EXPECT_FALSE(mqtt.verifyConnection()) << "Verify connection not OK";

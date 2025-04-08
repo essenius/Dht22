@@ -16,6 +16,15 @@ find_package(Git)
 
 assertVariableSet(dhtName dhtTestName Git_FOUND)
 
+# Ensure the build type is set to Debug
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+    message (STATUS "CMAKE_BUILD_TYPE set to Debug")
+endif()
+
+# Add debug-specific compiler flags (optional, for more control)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -35,10 +44,10 @@ add_executable(${dhtTestName} "")
 #file(GLOB_RECURSE mySources LIST_DIRECTORIES true *.cpp)
 
 set(myHeaders "")
-set(mySources ConfigTest.cpp MqttTest.cpp SensorDataTest.cpp Main.cpp)
+set(mySources ConfigTest.cpp MqttTest.cpp SensorDataTest.cpp main.cpp)
 
 target_sources (${dhtTestName} PRIVATE ${myHeaders} PRIVATE ${mySources})
 
-target_link_libraries(${dhtTestName} ${dhtName} gtest_main)
+target_link_libraries(${dhtTestName} ${dhtName} gtest_main ${MOSQUITTO_LIB})
 
 add_test(NAME ${dhtTestName} COMMAND ${dhtTestName})
