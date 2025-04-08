@@ -34,7 +34,8 @@ endif()
 message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 
 if (WIN32)	
-  # this does not work right yet. For some reason the linker cannot find the pigpio-mock library
+  # For this to work make sure the pigpio mock library and the mosquitto library are in the path
+  # TODO: include the pigpio mock library in the project
   message(STATUS "Windows build")
   set(CMAKE_PREFIX_PATH $ENV{MOSQUITTO_DIR} $ENV{MOSQUITTO_DIR}/devel $ENV{PIGPIO_DIR}; $ENV{PIGPIO_DIR}/build)
   message(STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
@@ -43,12 +44,13 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/lib;${PROJECT_BINARY_DIR}/lib/cmake")
 
-if (TOP_LEVEL) 
+if (TOP_LEVEL AND (NOT WIN32))
   message(STATUS "Top level project - enabling code coverage")
   add_subdirectory(lib)
-#  set(CODE_COVERAGE ON)
-#  include(code-coverage)
-#  add_code_coverage()
+  set(CODE_COVERAGE ON)
+  include(code-coverage)
+  
+  add_code_coverage()
 endif()
 
 add_subdirectory(src)
@@ -59,7 +61,10 @@ if(TOP_LEVEL)
   message(STATUS "Top level project - enabling tests")
   enable_testing()
   add_subdirectory(test)
-#  # target_code_coverage(${dhtTestName} EXCLUDE build/_deps/googletest-src/* test/*) 
+  if (NOT WIN32)
+    # add code coverage for the tests
+    target_code_coverage(${dhtTestName} EXCLUDE build/_deps/googletest-src/* test/*)
+  endif()
 endif()
 
 # For testing on on Windows, run: 
@@ -69,4 +74,5 @@ endif()
 #  mingw32-make.exe
 #  ctest --output-on-failure
 # Make sure Mosquitto and the pigpio-mock library are in the PATH
-# to generate coverage report run 'make ccov-DhtTest' and view build/ccov/DhtTest/index.html
+
+# to generate coverage report on Linux run 'make ccov-DhtTest' and view build/ccov/DhtTest/index.html
